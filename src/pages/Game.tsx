@@ -1,3 +1,3 @@
 export const GamePage = () => {
-    return <div>Test</div>;
+    return <div>Testing!</div>;
 };
