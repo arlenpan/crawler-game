@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { GamePage } from './pages/Game';
+import 'src/styles/main.css';
 
 const router = createBrowserRouter([{ path: '/', element: <GamePage /> }]);
 
