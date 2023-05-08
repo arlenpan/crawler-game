@@ -4,7 +4,8 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { GamePage } from './pages/Game';
 import 'src/styles/main.css';
 
-const router = createBrowserRouter([{ path: '/', element: <GamePage /> }]);
+const BASE_ROUTE = '/crawlg';
+const router = createBrowserRouter([{ path: `${BASE_ROUTE}/`, element: <GamePage /> }]);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <React.StrictMode>
