@@ -2,38 +2,44 @@ import { useEffect, useState } from 'react';
 
 export const useMouseDrag = () => {
     const [isDragging, setDragging] = useState(false);
-    const [mouseEvent, setMouseEvent] = useState<MouseEvent | null>(null);
+    const [event, setEvent] = useState<Event | null>(null);
 
     // EVENT HANDLING
     useEffect(() => {
-        document.addEventListener('mousedown', handleMouseDown);
-        document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('mousedown', handleDown);
+        document.addEventListener('mouseup', handleUp);
+        document.addEventListener('touchstart', handleDown);
+        document.addEventListener('touchend', handleUp);
         return () => {
-            document.removeEventListener('mousedown', handleMouseDown);
-            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('mousedown', handleDown);
+            document.removeEventListener('mouseup', handleUp);
+            document.removeEventListener('touchstart', handleDown);
+            document.removeEventListener('touchend', handleUp);
         };
     }, []);
 
     useEffect(() => {
-        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove);
         return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('touchmove', handleMove);
         };
     }, [isDragging]);
 
-    const handleMouseDown = (e: MouseEvent) => {
+    const handleDown = (e: Event) => {
         setDragging(true);
-        setMouseEvent(e);
+        setEvent(e);
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-        if (isDragging) setMouseEvent(e);
+    const handleMove = (e: Event) => {
+        if (isDragging) setEvent(e);
     };
 
-    const handleMouseUp = () => {
+    const handleUp = () => {
         setDragging(false);
-        setMouseEvent(null);
+        setEvent(null);
     };
 
-    return { isDragging, mouseEvent };
+    return { isDragging, event };
 };

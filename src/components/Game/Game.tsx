@@ -15,21 +15,31 @@ const TILE_TO_COMPONENT: Record<string, React.FC> = {
 export const Game = () => {
     // console.log(game);
 
-    const { isDragging, mouseEvent } = useMouseDrag();
+    const { isDragging, event } = useMouseDrag();
     const [activeTiles, setActiveTiles] = useState<[number, number][]>([]);
 
     useEffect(() => {
-        console.log(mouseEvent);
+        // console.log(event);
         // get active tile
-        if (mouseEvent) {
-            const target = mouseEvent.target;
+        if (event) {
+            //  if mouse event
+            let target;
+            if (event instanceof MouseEvent) {
+                target = event.target;
+            }
+            if (event instanceof TouchEvent) {
+                const touch = event.changedTouches[0];
+                target = document.elementFromPoint(touch.clientX, touch.clientY);
+            }
             if (!target || !(target instanceof HTMLElement)) return;
+
             const dataset = target.dataset;
             if (!dataset) return;
             const { row, column } = dataset;
             if (!row || !column) return;
             const rowNumber = parseInt(row);
             const columnNumber = parseInt(column);
+            console.log(row, column);
             pushToActiveTiles(rowNumber, columnNumber);
 
             // track next active tile
@@ -37,7 +47,7 @@ export const Game = () => {
             // reset active tile
             setActiveTiles([]);
         }
-    }, [mouseEvent]);
+    }, [event]);
 
     const pushToActiveTiles = (row: number, column: number) => {
         if (activeTiles.length === 0) {

@@ -1,3 +1,8 @@
+/* VARIABLES */
+:root {
+    --tile-size: 40px;
+}
+
 /* FLEX */
 .d-flex {
     display: flex;
