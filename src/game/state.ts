@@ -1,14 +1,4 @@
-// base game state
-
-const DEFAULT_WIDTH = 8;
-const DEFAULT_HEIGHT = 8;
-
-const TILE_TYPES = {
-    SWORD: 'sword',
-    SHIELD: 'shield',
-    POTION: 'potion',
-    MONSTER: 'monster',
-};
+import { DEFAULT_HEIGHT, DEFAULT_WIDTH, TILE_TYPES } from './constants';
 
 const generateInitialState = ({ width, height }: { width: number; height: number }) => {
     const board = Array.from({ length: height }, () =>
