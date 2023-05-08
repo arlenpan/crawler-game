@@ -1,7 +1,9 @@
 import { DEFAULT_HEIGHT, DEFAULT_WIDTH, TILE_TYPES } from './constants';
 
-const generateInitialState = ({ width, height }: { width: number; height: number }) => {
-    const board = Array.from({ length: height }, () =>
+type TBoard = Array<Array<string | null>>;
+
+const generateInitialState = (width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT) => {
+    const board: TBoard = Array.from({ length: height }, () =>
         Array.from({ length: width }, () => {
             const types = Object.values(TILE_TYPES);
             const rand = Math.floor(Math.random() * types.length);
@@ -11,6 +13,13 @@ const generateInitialState = ({ width, height }: { width: number; height: number
     return board;
 };
 
+const generateRandomTile = () => {
+    const types = Object.values(TILE_TYPES);
+    const rand = Math.floor(Math.random() * types.length);
+    return types[rand];
+};
+
 export const game = {
-    state: generateInitialState({ width: DEFAULT_WIDTH, height: DEFAULT_HEIGHT }),
+    generateInitialState,
+    generateRandomTile,
 };

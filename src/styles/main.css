@@ -1,3 +1,5 @@
+@import './reset.css';
+
 /* VARIABLES */
 :root {
     --tile-size: 40px;
@@ -9,6 +11,7 @@
 }
 
 .d-flex-column {
+    display: flex;
     flex-direction: column;
 }
 
@@ -18,4 +21,8 @@
 
 .justify-center {
     justify-content: center;
+}
+
+.w-100 {
+    width: 100%;
 }

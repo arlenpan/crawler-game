@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
-export const useMouseDrag = () => {
+export const useDrag = () => {
     const [isDragging, setDragging] = useState(false);
     const [event, setEvent] = useState<Event | null>(null);
+    const [target, setTarget] = useState<HTMLElement | null>(null);
 
-    // EVENT HANDLING
     useEffect(() => {
         document.addEventListener('mousedown', handleDown);
         document.addEventListener('mouseup', handleUp);
@@ -27,6 +27,20 @@ export const useMouseDrag = () => {
         };
     }, [isDragging]);
 
+    useEffect(() => {
+        if (event) {
+            if (event instanceof MouseEvent) {
+                setTarget(event.target as HTMLElement);
+            }
+            if (event instanceof TouchEvent) {
+                const touch = event.changedTouches[0];
+                setTarget(document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement);
+            }
+        } else {
+            setTarget(null);
+        }
+    }, [event]);
+
     const handleDown = (e: Event) => {
         setDragging(true);
         setEvent(e);
@@ -41,5 +55,5 @@ export const useMouseDrag = () => {
         setEvent(null);
     };
 
-    return { isDragging, event };
+    return { isDragging, event, target };
 };
