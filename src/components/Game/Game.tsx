@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { TileCoin, TilePotion, TileShield, TileSword } from 'src/components/Sprites';
-import { game } from 'src/game/state';
 import styles from './Game.module.css';
 import { useDrag } from 'src/renderer/useDrag';
 import classNames from 'classnames';
+import { generateInitialBoard, generateRandomTile } from 'src/game/board';
+import { generateInitialPlayer, tileReducer } from 'src/game/player';
+import { ITile, TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SWORD } from 'src/game/tiles';
 
-const TILE_TO_COMPONENT: Record<string, React.FC> = {
-    sword: TileSword,
-    shield: TileShield,
-    coin: TileCoin,
-    potion: TilePotion,
+const TILE_TYPE_COMPONENT: Record<string, React.FC> = {
+    [TILE_SWORD.type]: TileSword,
+    [TILE_SHIELD.type]: TileShield,
+    [TILE_COIN.type]: TileCoin,
+    [TILE_POTION.type]: TilePotion,
 };
 
 export const Game = () => {
-    const [gameState, setGameState] = useState(game.generateInitialState());
+    const [gameState, setGameState] = useState(generateInitialBoard());
+    const [playerState, setPlayerState] = useState(generateInitialPlayer());
+    const [turnCount, setTurnCount] = useState(0);
     const { isDragging, event, target } = useDrag();
     const [activeTiles, setActiveTiles] = useState<[number, number][]>([]);
 
@@ -32,6 +36,7 @@ export const Game = () => {
         }
     }, [event, target]);
 
+    // continues the drag if the mouse is down
     const pushToActiveTiles = (row: number, column: number) => {
         if (activeTiles.length === 0) {
             setActiveTiles([[row, column]]);
@@ -58,12 +63,16 @@ export const Game = () => {
         }
     };
 
+    // releases the drag and clears the active tiles
     const releaseActiveTiles = () => {
         // ignore anything less than 3 tiles
         if (activeTiles.length < 3) {
             setActiveTiles([]);
             return;
         }
+
+        // collect active tile data
+        const activeTileContents = activeTiles.map(([row, column]) => gameState[row][column]);
 
         // remove tiles from game state
         const newGameState = [...gameState];
@@ -87,13 +96,33 @@ export const Game = () => {
         for (let i = 0; i < newGameState.length; i++) {
             for (let j = 0; j < newGameState[i].length; j++) {
                 if (newGameState[i][j] === null) {
-                    newGameState[i][j] = game.generateRandomTile();
+                    newGameState[i][j] = generateRandomTile();
                 }
             }
         }
 
-        setGameState(newGameState);
+        // update states
+        processActiveTiles(activeTileContents);
         setActiveTiles([]);
+        setGameState(newGameState);
+        setTurnCount(turnCount + 1);
+    };
+
+    // processes the active tiles and clears the active tiles - update player state here
+    /// this also represents one turn
+    const processActiveTiles = (activeTileContents: (ITile | null)[] = []) => {
+        // time to process tiles!
+        let newPlayerState = { ...playerState };
+
+        // armor disappears on each turn tick
+        newPlayerState.armor = 0;
+
+        activeTileContents.map((tile) => {
+            if (tile !== null) {
+                newPlayerState = tileReducer(newPlayerState, tile);
+            }
+        });
+        setPlayerState(newPlayerState);
     };
 
     const cellHasActiveTile = (row: number, column: number) => {
@@ -128,7 +157,7 @@ export const Game = () => {
                         <div key={i} className="d-flex align-center">
                             {row.map((tile, j) => {
                                 if (tile === null) return null;
-                                const TileComponent = TILE_TO_COMPONENT[tile];
+                                const TileComponent = TILE_TYPE_COMPONENT[tile.type];
                                 return <TileComponent key={j} />;
                             })}
                         </div>
@@ -137,9 +166,21 @@ export const Game = () => {
             </div>
 
             <div>
+                <strong>Player</strong>
+                <div>Health: {playerState.health}</div>
+                <div>Attack: {playerState.weapon.damage}</div>
+                <div>Armor: {playerState.armor}</div>
+                <div>Coins: {playerState.coins}</div>
+            </div>
+
+            <div>
+                <strong>Debug</strong>
+                <div>Turn: {turnCount}</div>
                 <div>Is dragging: {isDragging ? 'true' : 'false'}</div>
                 <div>Active Tile: {JSON.stringify(activeTiles)}</div>
-                <div>Coin percentage: {(gameState.flat().filter((tile) => tile === 'coin').length / 64) * 100}%</div>
+                <div>
+                    Coin percentage: {(gameState.flat().filter((tile) => tile?.type === 'coin').length / 64) * 100}%
+                </div>
             </div>
         </>
     );
