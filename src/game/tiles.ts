@@ -2,24 +2,25 @@
 
 export interface ITile {
     type: string;
+    rate: number; // Rate of appearance
 }
 
 export const TILE_SWORD: ITile = {
     type: 'sword',
-};
-export const TILE_POTION: ITile = {
-    type: 'potion',
-};
-export const TILE_COIN: ITile = {
-    type: 'coin',
-};
-export const TILE_SHIELD: ITile = {
-    type: 'shield',
+    rate: 1,
 };
 
-export const TILES = {
-    SWORD: TILE_SWORD,
-    POTION: TILE_POTION,
-    COIN: TILE_COIN,
-    SHIELD: TILE_SHIELD,
+export const TILE_POTION: ITile = {
+    type: 'potion',
+    rate: 1,
+};
+
+export const TILE_COIN: ITile = {
+    type: 'coin',
+    rate: 1,
+};
+
+export const TILE_SHIELD: ITile = {
+    type: 'shield',
+    rate: 1,
 };

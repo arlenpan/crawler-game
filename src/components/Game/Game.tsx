@@ -1,50 +1,56 @@
-import React, { useEffect, useState } from 'react';
-import { TileCoin, TilePotion, TileShield, TileSword } from 'src/components/Sprites';
-import styles from './Game.module.css';
-import { useDrag } from 'src/renderer/useDrag';
 import classNames from 'classnames';
-import { generateInitialBoard, generateRandomTile } from 'src/game/board';
+import { useEffect, useState } from 'react';
+import {
+    TBoardTile,
+    canDragToNextTile,
+    canStartDragOnTile,
+    checkMonsterDamage,
+    generateInitialBoard,
+    generateRandomTile,
+} from 'src/game/board';
+import { IEnemyTile, TYPE_ENEMY } from 'src/game/enemies';
 import { generateInitialPlayer, tileReducer } from 'src/game/player';
-import { ITile, TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SWORD } from 'src/game/tiles';
-
-const TILE_TYPE_COMPONENT: Record<string, React.FC> = {
-    [TILE_SWORD.type]: TileSword,
-    [TILE_SHIELD.type]: TileShield,
-    [TILE_COIN.type]: TileCoin,
-    [TILE_POTION.type]: TilePotion,
-};
+import { COMPONENT_TILE_MAP } from 'src/renderer/constants';
+import { useDrag } from 'src/renderer/useDrag';
+import { TileGeneric } from '../Sprites';
+import styles from './Game.module.css';
 
 export const Game = () => {
+    // GAME STATE
     const [gameState, setGameState] = useState(generateInitialBoard());
     const [playerState, setPlayerState] = useState(generateInitialPlayer());
     const [turnCount, setTurnCount] = useState(0);
+
+    // UI STATE
     const { isDragging, event, target } = useDrag();
     const [activeTiles, setActiveTiles] = useState<[number, number][]>([]);
 
+    // triggers during drag
     useEffect(() => {
         if (event && target) {
             const dataset = target.dataset;
             if (!dataset) return;
             const { row, column } = dataset;
             if (!row || !column) return;
-
             const rowNumber = parseInt(row);
             const columnNumber = parseInt(column);
-            pushToActiveTiles(rowNumber, columnNumber);
+            addActiveTiles(rowNumber, columnNumber);
         } else if (activeTiles.length > 0) {
             releaseActiveTiles();
         }
     }, [event, target]);
 
     // continues the drag if the mouse is down
-    const pushToActiveTiles = (row: number, column: number) => {
-        if (activeTiles.length === 0) {
+    const addActiveTiles = (row: number, column: number) => {
+        const currentTile = gameState[row][column];
+        if (activeTiles.length === 0 && canStartDragOnTile(currentTile)) {
             setActiveTiles([[row, column]]);
-        } else {
+        } else if (activeTiles.length > 0) {
             // if active tiles is not empty, check if new tile is adjacent to last tile
             const [lastRow, lastColumn] = activeTiles[activeTiles.length - 1];
+            const lastTile = gameState[lastRow][lastColumn];
             if (row === lastRow && column === lastColumn) return; // not same tile
-            if (gameState[row][column] !== gameState[lastRow][lastColumn]) return; // not same type
+            if (!canDragToNextTile(currentTile, lastTile)) return; // not same type (unless enemy)
 
             // check if two tiles ago - if so, undo previous tile
             if (activeTiles.length > 1) {
@@ -63,7 +69,7 @@ export const Game = () => {
         }
     };
 
-    // releases the drag and clears the active tiles
+    // releases the drag and clears the active tiles - this counts a turn
     const releaseActiveTiles = () => {
         // ignore anything less than 3 tiles
         if (activeTiles.length < 3) {
@@ -105,13 +111,14 @@ export const Game = () => {
         processActiveTiles(activeTileContents);
         setActiveTiles([]);
         setGameState(newGameState);
+        processGameState(newGameState);
         setTurnCount(turnCount + 1);
     };
 
+    // time to process tiles!
     // processes the active tiles and clears the active tiles - update player state here
     /// this also represents one turn
-    const processActiveTiles = (activeTileContents: (ITile | null)[] = []) => {
-        // time to process tiles!
+    const processActiveTiles = (activeTileContents: TBoardTile[] = []) => {
         let newPlayerState = { ...playerState };
 
         // armor disappears on each turn tick
@@ -123,6 +130,14 @@ export const Game = () => {
             }
         });
         setPlayerState(newPlayerState);
+    };
+
+    const processGameState = (gameState: TBoardTile[][]) => {
+        // monster attack
+        const newPlayerState = { ...playerState };
+        console.log(newPlayerState);
+        const damage = checkMonsterDamage(gameState);
+        // setPlayerState(newPlayerState);
     };
 
     const cellHasActiveTile = (row: number, column: number) => {
@@ -157,8 +172,12 @@ export const Game = () => {
                         <div key={i} className="d-flex align-center">
                             {row.map((tile, j) => {
                                 if (tile === null) return null;
-                                const TileComponent = TILE_TYPE_COMPONENT[tile.type];
-                                return <TileComponent key={j} />;
+                                if (tile.type === TYPE_ENEMY) {
+                                    return <TileGeneric key={j}>{(tile as IEnemyTile).enemyType}</TileGeneric>;
+                                } else {
+                                    const TileComponent = COMPONENT_TILE_MAP[tile.type];
+                                    return <TileComponent key={j} />;
+                                }
                             })}
                         </div>
                     ))}
@@ -167,7 +186,9 @@ export const Game = () => {
 
             <div>
                 <strong>Player</strong>
-                <div>Health: {playerState.health}</div>
+                <div>
+                    Health: {playerState.health}/{playerState.maxHealth}
+                </div>
                 <div>Attack: {playerState.weapon.damage}</div>
                 <div>Armor: {playerState.armor}</div>
                 <div>Coins: {playerState.coins}</div>

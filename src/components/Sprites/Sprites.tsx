@@ -1,5 +1,10 @@
 import spritesheet from 'src/assets/sprites.jpg';
 import styles from './Sprites.module.css';
+import { ReactNode } from 'react';
+
+export const TileGeneric = ({ children }: { children: ReactNode }) => {
+    return <div className={styles.tile}>{children}</div>;
+};
 
 export const TileCoin = () => {
     return (
