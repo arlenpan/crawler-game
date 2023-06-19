@@ -8,7 +8,7 @@ const BASE_ROUTE = '/crawlg';
 const router = createBrowserRouter([{ path: `${BASE_ROUTE}/`, element: <GamePage /> }]);
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-    <React.StrictMode>
+    // <React.StrictMode>
         <RouterProvider router={router} />
-    </React.StrictMode>
+    // </React.StrictMode>
 );

@@ -1,9 +1,9 @@
-import { Game } from 'src/components/Game';
+import Renderer from 'src/newRenderer/Component';
 
 export const GamePage = () => {
     return (
         <div className="d-flex-column align-center">
-            <Game />
+            <Renderer />
         </div>
     );
 };

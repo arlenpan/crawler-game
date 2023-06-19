@@ -1,4 +1,4 @@
-import { ITile, TILE_COIN, TILE_POTION, TILE_SHIELD } from './tiles';
+import { ITile, TILE_COIN, TILE_POTION, TILE_SHIELD } from '../newRenderer/consts/tiles';
 import { WEAPON_SWORD } from './weapons';
 import { IWeapon } from './weapons';
 
