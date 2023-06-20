@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import controller from './controller';
+import GameController from 'src/controllers/game';
 
-const Renderer = () => {
+const GameComponent = () => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const app = await controller.initialize();
+      const app = await GameController.initialize();
       const node = document.getElementById('pixi-root');
       if (node) {
         setIsInitialized(true);
@@ -20,4 +20,4 @@ const Renderer = () => {
   return <div id="pixi-root" />;
 };
 
-export default Renderer;
+export default GameComponent;

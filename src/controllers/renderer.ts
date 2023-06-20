@@ -1,7 +1,6 @@
 import * as PIXI from 'pixi.js';
-import { SPRITE_SRC } from './consts/sprites';
-import { APP_HEIGHT_PX, APP_WIDTH_PX, BOARD_PADDING_X_PX, BOARD_SIZE, TILE_SIZE } from './consts/config';
-import { TBoard } from './consts/board';
+import { TBoard } from 'src/consts/board';
+import { APP_HEIGHT_PX, APP_WIDTH_PX, BOARD_PADDING_X_PX, BOARD_SIZE, TILE_SIZE } from 'src/consts/config';
 
 interface IRendererState {
   app: PIXI.Application | null;
@@ -10,11 +9,11 @@ interface IRendererState {
   overlayContainer: PIXI.Container | null;
   spriteBoard: (PIXI.Sprite | undefined)[][] | null;
   isDragging: boolean;
-  selectedTiles: { x: number; y: number }[];
-  onSelectTiles: ((tiles: { x: number; y: number }[]) => void) | null;
+  onSelectTile: ((tiles: { x: number; y: number }) => void) | null;
+  onDeselectTiles: (() => void) | null;
 }
 
-// rendering layer for game
+// rendering layer + input handler controller
 const Renderer = (() => {
   const state: IRendererState = {
     app: null,
@@ -23,8 +22,8 @@ const Renderer = (() => {
     overlayContainer: null,
     spriteBoard: null,
     isDragging: false,
-    selectedTiles: [],
-    onSelectTiles: null,
+    onSelectTile: null,
+    onDeselectTiles: null,
   };
 
   const initialize = async () => {
@@ -36,6 +35,7 @@ const Renderer = (() => {
     gameContainer.addChild(boardContainer);
     gameContainer.addChild(overlayContainer);
 
+    // save to state
     state.app = app;
     state.gameContainer = gameContainer;
     state.boardContainer = boardContainer;
@@ -44,15 +44,24 @@ const Renderer = (() => {
     return app;
   };
 
-  const initializeBoard = async (board: TBoard) => {
+  const renderBoard = async (board: TBoard) => {
     const { app, boardContainer } = state;
     if (!app || !boardContainer) return;
+
+    // clear board
+    boardContainer.removeChildren();
+
+    // render backboard
+    const backboard = new PIXI.Graphics().beginFill('black').drawRect(0, 0, BOARD_SIZE, BOARD_SIZE).endFill();
+    backboard.x = BOARD_PADDING_X_PX;
+    backboard.y = BOARD_PADDING_X_PX;
+    boardContainer.addChild(backboard);
 
     // map board to state
     const spriteBoard = board.map((row) =>
       row.map((tile) => {
-        if (tile && tile.type && SPRITE_SRC[tile.type as keyof typeof SPRITE_SRC]) {
-          const sprite = PIXI.Sprite.from(SPRITE_SRC[tile.type as keyof typeof SPRITE_SRC]);
+        if (tile && tile.spriteURL) {
+          const sprite = PIXI.Sprite.from(tile.spriteURL);
           sprite.width = TILE_SIZE;
           sprite.height = TILE_SIZE;
           return sprite;
@@ -62,11 +71,6 @@ const Renderer = (() => {
     state.spriteBoard = spriteBoard;
 
     // render board
-    const backboard = new PIXI.Graphics().beginFill('black').drawRect(0, 0, BOARD_SIZE, BOARD_SIZE).endFill();
-    backboard.x = BOARD_PADDING_X_PX;
-    backboard.y = BOARD_PADDING_X_PX;
-    boardContainer.addChild(backboard);
-
     for (let i = 0; i < state.spriteBoard.length; i++) {
       const row = state.spriteBoard[i];
       for (let j = 0; j < row.length; j++) {
@@ -82,32 +86,14 @@ const Renderer = (() => {
     }
   };
 
-  // set callbacks for handlers
-  const onSelectTiles = (callback: (tiles: { x: number; y: number }[]) => void) => {
-    state.onSelectTiles = callback;
-  };
-
   const dragStart = (e) => {
     state.isDragging = true;
-    console.log('pointerdown');
-    console.log(e.global);
-  };
-
-  const dragEnd = (e) => {
-    state.isDragging = false;
-    if (state.overlayContainer) state.overlayContainer.removeChildren();
-    if (state.onSelectTiles) state.onSelectTiles(state.selectedTiles);
-    state.selectedTiles.forEach(({ x, y }) => {
-      const sprite = state?.spriteBoard?.[y][x];
-      if (sprite) sprite.alpha = 1;
-    });
-    state.selectedTiles = [];
   };
 
   const dragMove = (e) => {
     if (state.isDragging && state.overlayContainer) {
       const { x, y } = e.global;
-      const { spriteBoard, selectedTiles } = state;
+      const { spriteBoard } = state;
       if (!spriteBoard) return;
 
       // draw overlay
@@ -124,18 +110,18 @@ const Renderer = (() => {
       const boardY = Math.floor((y - BOARD_PADDING_X_PX) / TILE_SIZE);
       if (boardX < 0 || boardY < 0 || boardX >= spriteBoard.length || boardY >= spriteBoard[0].length) return;
 
-      // find if the tile is already selected
-      const isAlreadySelected = selectedTiles.some((tile) => tile.x === boardX && tile.y === boardY);
-      if (!isAlreadySelected) {
-        // add the tile to selectedTiles
-        state.selectedTiles.push({ x: boardX, y: boardY });
-        const sprite = spriteBoard[boardY][boardX];
-        if (sprite) sprite.alpha = 0.5;
-      }
+      // fire handler based on tile
+      if (state.onSelectTile) state.onSelectTile({ x: boardX, y: boardY });
     }
   };
 
-  const initializeHandler = async () => {
+  const dragEnd = (e) => {
+    state.isDragging = false;
+    if (state.overlayContainer) state.overlayContainer.removeChildren();
+    if (state.onDeselectTiles) state.onDeselectTiles();
+  };
+
+  const initializeHandlers = async () => {
     const { boardContainer } = state;
     if (boardContainer) {
       boardContainer.eventMode = 'static';
@@ -146,7 +132,30 @@ const Renderer = (() => {
     }
   };
 
-  return { initialize, initializeBoard, initializeHandler, onSelectTiles };
+  return {
+    initialize,
+    renderBoard,
+    initializeHandlers,
+
+    // assign callbacks
+    onSelectTile: (callback: (tiles: { x: number; y: number }) => void) => {
+      state.onSelectTile = callback;
+    },
+    onDeselectTiles: (callback: () => void) => {
+      state.onDeselectTiles = callback;
+    },
+    updateSelectedTiles: (tiles: { x: number; y: number }[]) => {
+      const { spriteBoard } = state;
+      if (!spriteBoard) return;
+      // TODO: make more efficient?
+      console.log('RENDERING', tiles);
+      spriteBoard.forEach((row) => row.forEach((sprite) => sprite && (sprite.alpha = 1)));
+      tiles.forEach(({ x, y }) => {
+        const sprite = spriteBoard[y][x];
+        if (sprite) sprite.alpha = 0.5;
+      });
+    },
+  };
 })();
 
 export default Renderer;

@@ -2,27 +2,23 @@
 
 /* VARIABLES */
 :root {
-    --tile-size: 40px;
+  --tile-size: 40px;
 }
 
 /* FLEX */
 .d-flex {
-    display: flex;
+  display: flex;
 }
 
 .d-flex-column {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .align-center {
-    align-items: center;
+  align-items: center;
 }
 
 .justify-center {
-    justify-content: center;
-}
-
-.w-100 {
-    width: 100%;
+  justify-content: center;
 }

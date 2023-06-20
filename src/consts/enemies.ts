@@ -15,6 +15,7 @@ export const TYPE_ENEMY = 'enemy';
 export const TILE_ENEMY_RAT: IEnemyTile = {
   type: TYPE_ENEMY,
   enemyType: 'rat',
+  spriteURL: 'src/assets/rat.jpg',
   rate: 0.5,
   health: 5,
   maxHealth: 5,
