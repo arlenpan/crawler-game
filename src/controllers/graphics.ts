@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 import { TBoard } from 'src/consts/board';
 import { APP_HEIGHT_PX, APP_WIDTH_PX, BOARD_PADDING_X_PX, BOARD_SIZE, TILE_SIZE } from 'src/consts/config';
 
-interface IRendererState {
+interface IGraphicsState {
   app: PIXI.Application | null;
   gameContainer: PIXI.Container | null;
   boardContainer: PIXI.Container | null;
@@ -15,7 +15,7 @@ interface IRendererState {
 
 // rendering layer + input handler controller
 const GraphicsController = (() => {
-  const state: IRendererState = {
+  const state: IGraphicsState = {
     app: null,
     gameContainer: null,
     boardContainer: null,
@@ -158,4 +158,4 @@ const GraphicsController = (() => {
   };
 })();
 
-export default Renderer;
+export default GraphicsController;
