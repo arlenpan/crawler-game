@@ -8,13 +8,13 @@ const Renderer = () => {
     async function load() {
       const app = await controller.initialize();
       const node = document.getElementById('pixi-root');
-      if (node && !isInitialized) {
+      if (node) {
         setIsInitialized(true);
         node.appendChild(app.view);
       }
     }
 
-    load();
+    if (!isInitialized) load();
   }, [isInitialized]);
 
   return <div id="pixi-root" />;

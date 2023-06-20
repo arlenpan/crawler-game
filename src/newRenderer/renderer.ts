@@ -1,14 +1,17 @@
 import * as PIXI from 'pixi.js';
 import { SPRITE_SRC } from './consts/sprites';
-import { APP_HEIGHT_PX, APP_WIDTH_PX } from './consts/config';
+import { APP_HEIGHT_PX, APP_WIDTH_PX, BOARD_PADDING_X_PX, BOARD_SIZE, TILE_SIZE } from './consts/config';
 import { TBoard } from './consts/board';
 
 interface IRendererState {
   app: PIXI.Application | null;
   gameContainer: PIXI.Container | null;
   boardContainer: PIXI.Container | null;
+  overlayContainer: PIXI.Container | null;
   spriteBoard: (PIXI.Sprite | undefined)[][] | null;
   isDragging: boolean;
+  selectedTiles: { x: number; y: number }[];
+  onSelectTiles: ((tiles: { x: number; y: number }[]) => void) | null;
 }
 
 // rendering layer for game
@@ -17,20 +20,26 @@ const Renderer = (() => {
     app: null,
     gameContainer: null,
     boardContainer: null,
-    isDragging: false,
+    overlayContainer: null,
     spriteBoard: null,
+    isDragging: false,
+    selectedTiles: [],
+    onSelectTiles: null,
   };
 
   const initialize = async () => {
     const app = new PIXI.Application<HTMLCanvasElement>({ width: APP_WIDTH_PX, height: APP_HEIGHT_PX });
     const gameContainer = new PIXI.Container();
     const boardContainer = new PIXI.Container();
+    const overlayContainer = new PIXI.Container();
     app.stage.addChild(gameContainer);
     gameContainer.addChild(boardContainer);
+    gameContainer.addChild(overlayContainer);
 
     state.app = app;
     state.gameContainer = gameContainer;
     state.boardContainer = boardContainer;
+    state.overlayContainer = overlayContainer;
 
     return app;
   };
@@ -38,11 +47,6 @@ const Renderer = (() => {
   const initializeBoard = async (board: TBoard) => {
     const { app, boardContainer } = state;
     if (!app || !boardContainer) return;
-
-    // set dimensions
-    const BOARD_PADDING = app.screen.width * 0.05;
-    const BOARD_SIZE = app.screen.width - BOARD_PADDING * 2;
-    const TILE_SIZE = BOARD_SIZE / board.length;
 
     // map board to state
     const spriteBoard = board.map((row) =>
@@ -58,6 +62,11 @@ const Renderer = (() => {
     state.spriteBoard = spriteBoard;
 
     // render board
+    const backboard = new PIXI.Graphics().beginFill('red').drawRect(0, 0, BOARD_SIZE, BOARD_SIZE).endFill();
+    backboard.x = BOARD_PADDING_X_PX;
+    backboard.y = BOARD_PADDING_X_PX;
+    boardContainer.addChild(backboard);
+
     for (let i = 0; i < state.spriteBoard.length; i++) {
       const row = state.spriteBoard[i];
       for (let j = 0; j < row.length; j++) {
@@ -65,15 +74,72 @@ const Renderer = (() => {
         if (sprite) {
           sprite.width = TILE_SIZE;
           sprite.height = TILE_SIZE;
-          sprite.x = j * TILE_SIZE + BOARD_PADDING;
-          sprite.y = i * TILE_SIZE + BOARD_PADDING;
+          sprite.x = j * TILE_SIZE + BOARD_PADDING_X_PX;
+          sprite.y = i * TILE_SIZE + BOARD_PADDING_X_PX;
           boardContainer.addChild(sprite);
         }
       }
     }
   };
 
-  return { initialize, initializeBoard };
+  // set callbacks for handlers
+  const onSelectTiles = (callback: (tiles: { x: number; y: number }[]) => void) => {
+    state.onSelectTiles = callback;
+  };
+
+  const initializeHandler = async () => {
+    const { boardContainer, overlayContainer } = state;
+    if (!boardContainer || !overlayContainer) return;
+
+    boardContainer.eventMode = 'static';
+    boardContainer.on('pointerdown', (e) => {
+      state.isDragging = true;
+      console.log('pointerdown');
+      console.log(e.global);
+    });
+    boardContainer.on('pointerup', (e) => {
+      state.isDragging = false;
+      console.log('pointerup');
+      overlayContainer.removeChildren();
+    });
+    boardContainer.on('pointerupoutside', (e) => {
+      state.isDragging = false;
+      overlayContainer.removeChildren();
+      state.selectedTiles = [];
+      if (state.onSelectTiles) state.onSelectTiles(state.selectedTiles);
+    });
+    boardContainer.on('pointermove', (e) => {
+      if (state.isDragging) {
+        const { x, y } = e.global;
+        const { spriteBoard, selectedTiles } = state;
+        if (!spriteBoard) return;
+
+        // draw overlay
+        const circle = new PIXI.Graphics();
+        circle.beginFill(0x9966ff);
+        circle.drawCircle(0, 0, 5);
+        circle.endFill();
+        circle.x = x;
+        circle.y = y;
+        overlayContainer.addChild(circle);
+
+        // calculate which tile is selected
+        const boardX = Math.floor((x - BOARD_PADDING_X_PX) / TILE_SIZE);
+        const boardY = Math.floor((y - BOARD_PADDING_X_PX) / TILE_SIZE);
+        if (boardX < 0 || boardY < 0 || boardX >= spriteBoard.length || boardY >= spriteBoard[0].length) return;
+
+        // find if the tile is already selected
+        const isAlreadySelected = selectedTiles.some((tile) => tile.x === boardX && tile.y === boardY);
+        if (!isAlreadySelected) {
+          // add the tile to selectedTiles
+          state.selectedTiles.push({ x: boardX, y: boardY });
+          if (state.onSelectTiles) state.onSelectTiles(state.selectedTiles);
+        }
+      }
+    });
+  };
+
+  return { initialize, initializeBoard, initializeHandler, onSelectTiles };
 })();
 
 export default Renderer;

@@ -1,11 +1,10 @@
-import { BOARD_HEIGHT, BOARD_WIDTH } from './consts/config';
-import { BASE_TILES, ENEMY_TILES, TBoard } from './consts/board';
-import { ITile } from './consts/tiles';
 import { getWeightedRandomIndex } from 'src/utils/getWeightedRandomIndex';
+import { BASE_TILES, ENEMY_TILES, TBoard, TBoardTile } from './consts/board';
+import { BOARD_HEIGHT, BOARD_WIDTH } from './consts/config';
 
 interface IGameState {
   board: TBoard | null;
-  selectedTiles: ITile[];
+  selectedTiles: TBoardTile[];
   gameTurn: number;
 }
 
@@ -37,7 +36,15 @@ const Game = (() => {
     return ALL_TILES[randomIndex];
   };
 
-  return { initialize };
+  const setSelectedTiles = (tiles: { x: number; y: number }[]) => {
+    const { board } = state;
+    if (!board) return;
+
+    const selectedTiles = tiles.map((tile) => board[tile.y][tile.x]);
+    state.selectedTiles = selectedTiles;
+  };
+
+  return { initialize, setSelectedTiles };
 })();
 
 export default Game;

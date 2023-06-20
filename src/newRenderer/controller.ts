@@ -6,6 +6,11 @@ const Controller = (() => {
     const app = await renderer.initialize();
     const board = await game.initialize();
     renderer.initializeBoard(board);
+    renderer.onSelectTiles((tiles) => {
+      game.setSelectedTiles(tiles);
+    });
+    renderer.initializeHandler();
+
     return app;
   };
 
