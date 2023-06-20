@@ -14,7 +14,7 @@ interface IRendererState {
 }
 
 // rendering layer + input handler controller
-const Renderer = (() => {
+const GraphicsController = (() => {
   const state: IRendererState = {
     app: null,
     gameContainer: null,
