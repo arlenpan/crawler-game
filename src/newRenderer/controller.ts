@@ -7,7 +7,7 @@ const Controller = (() => {
     const board = await game.initialize();
     renderer.initializeBoard(board);
     renderer.onSelectTiles((tiles) => {
-      game.setSelectedTiles(tiles);
+      console.log(tiles);
     });
     renderer.initializeHandler();
 

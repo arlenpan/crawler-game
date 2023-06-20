@@ -62,7 +62,7 @@ const Renderer = (() => {
     state.spriteBoard = spriteBoard;
 
     // render board
-    const backboard = new PIXI.Graphics().beginFill('red').drawRect(0, 0, BOARD_SIZE, BOARD_SIZE).endFill();
+    const backboard = new PIXI.Graphics().beginFill('black').drawRect(0, 0, BOARD_SIZE, BOARD_SIZE).endFill();
     backboard.x = BOARD_PADDING_X_PX;
     backboard.y = BOARD_PADDING_X_PX;
     boardContainer.addChild(backboard);
@@ -87,56 +87,63 @@ const Renderer = (() => {
     state.onSelectTiles = callback;
   };
 
-  const initializeHandler = async () => {
-    const { boardContainer, overlayContainer } = state;
-    if (!boardContainer || !overlayContainer) return;
+  const dragStart = (e) => {
+    state.isDragging = true;
+    console.log('pointerdown');
+    console.log(e.global);
+  };
 
-    boardContainer.eventMode = 'static';
-    boardContainer.on('pointerdown', (e) => {
-      state.isDragging = true;
-      console.log('pointerdown');
-      console.log(e.global);
+  const dragEnd = (e) => {
+    state.isDragging = false;
+    if (state.overlayContainer) state.overlayContainer.removeChildren();
+    if (state.onSelectTiles) state.onSelectTiles(state.selectedTiles);
+    state.selectedTiles.forEach(({ x, y }) => {
+      const sprite = state?.spriteBoard?.[y][x];
+      if (sprite) sprite.alpha = 1;
     });
-    boardContainer.on('pointerup', (e) => {
-      state.isDragging = false;
-      console.log('pointerup');
-      overlayContainer.removeChildren();
-    });
-    boardContainer.on('pointerupoutside', (e) => {
-      state.isDragging = false;
-      overlayContainer.removeChildren();
-      state.selectedTiles = [];
-      if (state.onSelectTiles) state.onSelectTiles(state.selectedTiles);
-    });
-    boardContainer.on('pointermove', (e) => {
-      if (state.isDragging) {
-        const { x, y } = e.global;
-        const { spriteBoard, selectedTiles } = state;
-        if (!spriteBoard) return;
+    state.selectedTiles = [];
+  };
 
-        // draw overlay
-        const circle = new PIXI.Graphics();
-        circle.beginFill(0x9966ff);
-        circle.drawCircle(0, 0, 5);
-        circle.endFill();
-        circle.x = x;
-        circle.y = y;
-        overlayContainer.addChild(circle);
+  const dragMove = (e) => {
+    if (state.isDragging && state.overlayContainer) {
+      const { x, y } = e.global;
+      const { spriteBoard, selectedTiles } = state;
+      if (!spriteBoard) return;
 
-        // calculate which tile is selected
-        const boardX = Math.floor((x - BOARD_PADDING_X_PX) / TILE_SIZE);
-        const boardY = Math.floor((y - BOARD_PADDING_X_PX) / TILE_SIZE);
-        if (boardX < 0 || boardY < 0 || boardX >= spriteBoard.length || boardY >= spriteBoard[0].length) return;
+      // draw overlay
+      const circle = new PIXI.Graphics();
+      circle.beginFill(0x9966ff);
+      circle.drawCircle(0, 0, 5);
+      circle.endFill();
+      circle.x = x;
+      circle.y = y;
+      state.overlayContainer.addChild(circle);
 
-        // find if the tile is already selected
-        const isAlreadySelected = selectedTiles.some((tile) => tile.x === boardX && tile.y === boardY);
-        if (!isAlreadySelected) {
-          // add the tile to selectedTiles
-          state.selectedTiles.push({ x: boardX, y: boardY });
-          if (state.onSelectTiles) state.onSelectTiles(state.selectedTiles);
-        }
+      // calculate which tile is selected
+      const boardX = Math.floor((x - BOARD_PADDING_X_PX) / TILE_SIZE);
+      const boardY = Math.floor((y - BOARD_PADDING_X_PX) / TILE_SIZE);
+      if (boardX < 0 || boardY < 0 || boardX >= spriteBoard.length || boardY >= spriteBoard[0].length) return;
+
+      // find if the tile is already selected
+      const isAlreadySelected = selectedTiles.some((tile) => tile.x === boardX && tile.y === boardY);
+      if (!isAlreadySelected) {
+        // add the tile to selectedTiles
+        state.selectedTiles.push({ x: boardX, y: boardY });
+        const sprite = spriteBoard[boardY][boardX];
+        if (sprite) sprite.alpha = 0.5;
       }
-    });
+    }
+  };
+
+  const initializeHandler = async () => {
+    const { boardContainer } = state;
+    if (boardContainer) {
+      boardContainer.eventMode = 'static';
+      boardContainer.on('pointerdown', dragStart);
+      boardContainer.on('pointerup', dragEnd);
+      boardContainer.on('pointerupoutside', dragEnd);
+      boardContainer.on('pointermove', dragMove);
+    }
   };
 
   return { initialize, initializeBoard, initializeHandler, onSelectTiles };

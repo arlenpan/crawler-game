@@ -4,14 +4,12 @@ import { BOARD_HEIGHT, BOARD_WIDTH } from './consts/config';
 
 interface IGameState {
   board: TBoard | null;
-  selectedTiles: TBoardTile[];
   gameTurn: number;
 }
 
 const Game = (() => {
   const state: IGameState = {
     board: null,
-    selectedTiles: [],
     gameTurn: 0,
   };
 
@@ -36,15 +34,7 @@ const Game = (() => {
     return ALL_TILES[randomIndex];
   };
 
-  const setSelectedTiles = (tiles: { x: number; y: number }[]) => {
-    const { board } = state;
-    if (!board) return;
-
-    const selectedTiles = tiles.map((tile) => board[tile.y][tile.x]);
-    state.selectedTiles = selectedTiles;
-  };
-
-  return { initialize, setSelectedTiles };
+  return { initialize };
 })();
 
 export default Game;
