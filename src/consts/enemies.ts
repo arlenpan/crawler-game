@@ -1,4 +1,5 @@
 import { ITile } from './tiles';
+import ratURL from '../assets/rat.jpg';
 
 export interface IEnemyTile extends ITile {
   enemyType: string;
@@ -15,7 +16,7 @@ export const TYPE_ENEMY = 'enemy';
 export const TILE_ENEMY_RAT: IEnemyTile = {
   type: TYPE_ENEMY,
   enemyType: 'rat',
-  spriteURL: 'src/assets/rat.jpg',
+  spriteURL: ratURL,
   rate: 0.5,
   health: 5,
   maxHealth: 5,

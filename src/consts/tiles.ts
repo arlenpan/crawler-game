@@ -1,3 +1,8 @@
+import swordURL from '../assets/sword.png';
+import potionURL from '../assets/potion.jpg';
+import coinURL from '../assets/coin.png';
+import shieldURL from '../assets/shield.png';
+
 // Entities for tiles
 export interface ITile {
   type: string;
@@ -7,24 +12,24 @@ export interface ITile {
 
 export const TILE_SWORD: ITile = {
   type: 'sword',
-  spriteURL: 'src/assets/sword.png',
+  spriteURL: swordURL,
   rate: 1,
 };
 
 export const TILE_POTION: ITile = {
   type: 'potion',
-  spriteURL: 'src/assets/potion.jpg',
+  spriteURL: potionURL,
   rate: 1,
 };
 
 export const TILE_COIN: ITile = {
   type: 'coin',
-  spriteURL: 'src/assets/coin.png',
+  spriteURL: coinURL,
   rate: 1,
 };
 
 export const TILE_SHIELD: ITile = {
   type: 'shield',
-  spriteURL: 'src/assets/shield.png',
+  spriteURL: shieldURL,
   rate: 1,
 };
