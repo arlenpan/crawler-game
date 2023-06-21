@@ -97,16 +97,18 @@ const GameController = (() => {
     }
   };
 
-  const updateBoard = (selectedTiles: { x: number; y: number }[]) => {
+  const updateBoard = async (selectedTiles: { x: number; y: number }[]) => {
     const { board } = state;
     if (!board) return;
 
-    selectedTiles.forEach((tile) => {
+    const removePromises = selectedTiles.map(async (tile) => {
       board[tile.y][tile.x] = null;
-      GraphicsController.removeTile(tile);
+      return GraphicsController.removeTile(tile);
     });
+    await Promise.all(removePromises);
 
     // collapse columns down
+    const movePromises = [];
     for (let x = 0; x < BOARD_WIDTH; x++) {
       for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
         if (board[y][x] === null) {
@@ -114,26 +116,28 @@ const GameController = (() => {
             if (board[y2][x] !== null) {
               board[y][x] = board[y2][x];
               board[y2][x] = null;
-              GraphicsController.moveTile({ x, y: y2 }, { x, y });
+              movePromises.push(GraphicsController.moveTile({ x, y: y2 }, { x, y }));
               break;
             }
           }
         }
       }
     }
+    await Promise.all(movePromises);
 
-    // wait for animations to play out
-    setTimeout(() => {
-      // generate new tiles
-      for (let x = 0; x < BOARD_WIDTH; x++) {
-        for (let y = 0; y < BOARD_HEIGHT; y++) {
-          if (board[y][x] === null) {
-            board[y][x] = generateRandomTile();
-            GraphicsController.addTile({ x, y }, board[y][x].spriteURL);
-          }
+    // generate new tiles
+    const addPromises = [];
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      for (let y = 0; y < BOARD_HEIGHT; y++) {
+        if (board[y][x] === null) {
+          board[y][x] = generateRandomTile();
+          addPromises.push(GraphicsController.addTile({ x, y }, board[y][x].spriteURL));
         }
       }
-    }, 100);
+    }
+    await Promise.all(addPromises);
+
+    GraphicsController.renderBoard(board);
   };
 
   const updatePlayerState = (selectedTiles: { x: number; y: number }[]) => {

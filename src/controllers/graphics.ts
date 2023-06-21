@@ -12,6 +12,7 @@ import {
   TILE_SIZE,
 } from 'src/consts/config';
 import { IPlayerState } from './game';
+import secondsToFrames from 'src/utils/secondsToFrames';
 
 interface IGraphicsState {
   app: PIXI.Application | null;
@@ -131,67 +132,89 @@ const GraphicsController = (() => {
     }
   };
 
-  const addTile = async ({ x, y }: { x: number; y: number }, spriteURL: string) => {
-    const { app, boardContainer } = state;
-    if (!app || !boardContainer) return;
-    const sprite = PIXI.Sprite.from(spriteURL);
-    sprite.width = TILE_SIZE;
-    sprite.height = TILE_SIZE;
-    sprite.x = x * TILE_SIZE + BOARD_PADDING_PX;
-    sprite.y = y * TILE_SIZE + BOARD_PADDING_PX;
-    boardContainer.addChild(sprite);
-    if (state.spriteBoard) state.spriteBoard[y][x] = sprite;
+  const addTile = ({ x, y }: { x: number; y: number }, spriteURL: string) => {
+    return new Promise<void>((resolve) => {
+      const { app, boardContainer } = state;
+      if (!app || !boardContainer) return;
+      const sprite = PIXI.Sprite.from(spriteURL);
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      sprite.x = x * TILE_SIZE + BOARD_PADDING_PX;
+      sprite.y = y * TILE_SIZE + BOARD_PADDING_PX;
+      boardContainer.addChild(sprite);
+      if (state.spriteBoard) state.spriteBoard[y][x] = sprite;
+      resolve();
+    });
   };
 
-  const moveTile = async (oldCoords, newCoords, duration = 2) => {
-    const { app, spriteBoard, boardContainer } = state;
-    if (!app || !spriteBoard || !boardContainer) return;
+  const moveTile = (oldCoords, newCoords, duration = secondsToFrames(0.1)) => {
+    return new Promise<void>((resolve) => {
+      const { app, spriteBoard, boardContainer } = state;
+      if (!app || !spriteBoard || !boardContainer) return;
 
-    const sprite = spriteBoard[oldCoords.y][oldCoords.x];
-    if (!sprite) return;
+      const sprite = spriteBoard[oldCoords.y][oldCoords.x];
+      if (!sprite) return;
 
-    const newX = newCoords.x * TILE_SIZE + BOARD_PADDING_PX;
-    const newY = newCoords.y * TILE_SIZE + BOARD_PADDING_PX;
+      const newX = newCoords.x * TILE_SIZE + BOARD_PADDING_PX;
+      const newY = newCoords.y * TILE_SIZE + BOARD_PADDING_PX;
 
-    // start animation
-    let elapsed = 0;
-    state.isBlockingInteraction = true;
-    const animateTickerMethod = (delta) => {
-      elapsed += delta;
+      // start animation
+      let elapsed = 0;
+      state.isBlockingInteraction = true;
+      const animateTickerMethod = (delta) => {
+        if (elapsed < duration) {
+          elapsed += delta;
 
-      // get current position
-      const { x, y } = sprite;
-      const diffX = newX - x;
-      const diffY = newY - y;
+          // get current position
+          const { x, y } = sprite;
+          const diffX = newX - x;
+          const diffY = newY - y;
 
-      // move across duration
-      sprite.x = x + (diffX * delta) / duration;
-      sprite.y = y + (diffY * delta) / duration;
+          // move across duration
+          sprite.x = x + (diffX * delta) / duration;
+          sprite.y = y + (diffY * delta) / duration;
+        } else {
+          app.ticker.remove(animateTickerMethod);
+          state.isBlockingInteraction = false;
+          sprite.x = newX;
+          sprite.y = newY;
 
-      // stop ticker
-      if (elapsed >= duration) {
-        app.ticker.remove(animateTickerMethod);
-        state.isBlockingInteraction = false;
-        sprite.x = newX;
-        sprite.y = newY;
+          // update spriteboard
+          spriteBoard[oldCoords.y][oldCoords.x] = undefined;
+          spriteBoard[newCoords.y][newCoords.x] = sprite;
 
-        // update spriteboard
-        spriteBoard[oldCoords.y][oldCoords.x] = undefined;
-        spriteBoard[newCoords.y][newCoords.x] = sprite;
-      }
-    };
-    app.ticker.add(animateTickerMethod);
+          resolve();
+        }
+      };
+      app.ticker.add(animateTickerMethod);
+    });
   };
 
-  const removeTile = ({ x, y }: { x: number; y: number }) => {
-    const { spriteBoard, boardContainer } = state;
-    if (!spriteBoard || !boardContainer) return;
+  const removeTile = async ({ x, y }: { x: number; y: number }, duration = secondsToFrames(0.1)) => {
+    return new Promise<void>((resolve) => {
+      const { app, spriteBoard, boardContainer } = state;
+      if (!app || !spriteBoard || !boardContainer) return;
 
-    const sprite = spriteBoard[y][x];
-    if (!sprite) return;
+      const sprite = spriteBoard[y][x];
+      if (!sprite) return;
 
-    spriteBoard[y][x] = undefined;
-    boardContainer.removeChild(sprite);
+      let elapsed = 0;
+      state.isBlockingInteraction = true;
+      const animateTickerMethod = (delta) => {
+        if (elapsed < duration) {
+          console.log('TICK', delta, elapsed);
+          elapsed += delta;
+          sprite.alpha = 1 - elapsed / duration;
+        } else {
+          spriteBoard[y][x] = undefined;
+          state.isBlockingInteraction = false;
+          boardContainer.removeChild(sprite);
+          resolve();
+        }
+      };
+
+      app.ticker.add(animateTickerMethod);
+    });
   };
 
   const dragStart = (e) => {
