@@ -7,6 +7,13 @@ interface IGameState {
   board: TBoard | null;
   selectedTiles: { x: number; y: number }[];
   gameTurn: number;
+  player: IPlayerState;
+}
+
+export interface IPlayerState {
+  currentHealth: number;
+  maxHealth: number;
+  coins: number;
 }
 
 // game logic and base controller
@@ -15,12 +22,18 @@ const GameController = (() => {
     board: null,
     selectedTiles: [],
     gameTurn: 0,
+    player: {
+      currentHealth: 50,
+      maxHealth: 50,
+      coins: 0,
+    },
   };
 
   const initialize = async () => {
     const app = await GraphicsController.initialize();
     const board = generateBoard();
     state.board = board;
+    GraphicsController.renderPlayer(state.player);
     GraphicsController.renderBoard(board);
     GraphicsController.onSelectTile(handleSelectTile);
     GraphicsController.onDeselectTiles(handleDeselectTiles);
@@ -69,50 +82,68 @@ const GameController = (() => {
     }
   };
 
-  // resolve action
   const handleDeselectTiles = () => {
     const { selectedTiles } = state;
-
-    // require minimum of three tiles to resolve action
-    if (selectedTiles.length > 2) handleResolveAction(selectedTiles);
+    if (selectedTiles.length > 2) processSelectedTiles(selectedTiles);
     state.selectedTiles = [];
     GraphicsController.updateSelectedTiles([]);
   };
 
-  const handleResolveAction = (selectedTiles: { x: number; y: number }[]) => {
-    // remove tiles from board
+  const processSelectedTiles = async (selectedTiles: { x: number; y: number }[]) => {
     const { board } = state;
     if (board) {
-      selectedTiles.forEach((tile) => {
-        board[tile.y][tile.x] = null;
-      });
+      updatePlayerState(selectedTiles);
+      updateBoard(selectedTiles);
+    }
+  };
 
-      // collapse columns down
-      for (let x = 0; x < BOARD_WIDTH; x++) {
-        for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
-          if (board[y][x] === null) {
-            for (let y2 = y - 1; y2 >= 0; y2--) {
-              if (board[y2][x] !== null) {
-                board[y][x] = board[y2][x];
-                board[y2][x] = null;
-                break;
-              }
+  const updateBoard = (selectedTiles: { x: number; y: number }[]) => {
+    const { board } = state;
+    if (!board) return;
+
+    selectedTiles.forEach((tile) => {
+      board[tile.y][tile.x] = null;
+      GraphicsController.removeTile(tile);
+    });
+
+    // collapse columns down
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+        if (board[y][x] === null) {
+          for (let y2 = y - 1; y2 >= 0; y2--) {
+            if (board[y2][x] !== null) {
+              board[y][x] = board[y2][x];
+              board[y2][x] = null;
+              GraphicsController.moveTile({ x, y: y2 }, { x, y });
+              break;
             }
           }
         }
       }
+    }
 
-      // generate new tiles
-      for (let x = 0; x < BOARD_WIDTH; x++) {
-        for (let y = 0; y < BOARD_HEIGHT; y++) {
-          if (board[y][x] === null) {
-            board[y][x] = generateRandomTile();
-          }
+    // generate new tiles
+    for (let x = 0; x < BOARD_WIDTH; x++) {
+      for (let y = 0; y < BOARD_HEIGHT; y++) {
+        if (board[y][x] === null) {
+          board[y][x] = generateRandomTile();
+          GraphicsController.addTile({ x, y }, board[y][x].spriteURL);
         }
       }
-
-      GraphicsController.renderBoard(board);
     }
+  };
+
+  const updatePlayerState = (selectedTiles: { x: number; y: number }[]) => {
+    const { board } = state;
+    if (!board) return;
+
+    const tiles = selectedTiles.map((tile) => board[tile.y][tile.x]);
+
+    // for each coin tile, add to player coins
+    const coins = tiles.filter((tile) => tile?.type === 'coin').length;
+    state.player.coins += coins;
+
+    GraphicsController.renderPlayer(state.player);
   };
 
   return { initialize, canStartDragOnTile, canDragToNextTile };

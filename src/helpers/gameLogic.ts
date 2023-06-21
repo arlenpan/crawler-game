@@ -21,7 +21,7 @@ export const generateRandomTile = () => {
 
 export const canStartDragOnTile = (tile: TBoardTile) => {
   if (!tile) return false;
-  if (tile.type === TYPE_ENEMY) return false;
+  // if (tile.type === TYPE_ENEMY) return false;
   return true;
 };
 

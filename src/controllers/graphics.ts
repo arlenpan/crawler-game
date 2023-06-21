@@ -1,16 +1,29 @@
 import * as PIXI from 'pixi.js';
 import { TBoard } from 'src/consts/board';
-import { APP_HEIGHT_PX, APP_WIDTH_PX, BOARD_PADDING_X_PX, BOARD_SIZE, TILE_SIZE } from 'src/consts/config';
+import {
+  APP_HEIGHT_PX,
+  APP_WIDTH_PX,
+  BOARD_PADDING_PX,
+  BOARD_SIZE,
+  PANEL_POSITION_X,
+  PANEL_POSITION_Y,
+  PANEL_SIZE_X,
+  PANEL_SIZE_Y,
+  TILE_SIZE,
+} from 'src/consts/config';
+import { IPlayerState } from './game';
 
 interface IGraphicsState {
   app: PIXI.Application | null;
   gameContainer: PIXI.Container | null;
   boardContainer: PIXI.Container | null;
   overlayContainer: PIXI.Container | null;
+  playerContainer: PIXI.Container | null;
   spriteBoard: (PIXI.Sprite | undefined)[][] | null;
   isDragging: boolean;
   onSelectTile: ((tiles: { x: number; y: number }) => void) | null;
   onDeselectTiles: (() => void) | null;
+  isBlockingInteraction: boolean;
 }
 
 // rendering layer + input handler controller
@@ -20,28 +33,59 @@ const GraphicsController = (() => {
     gameContainer: null,
     boardContainer: null,
     overlayContainer: null,
+    playerContainer: null,
     spriteBoard: null,
     isDragging: false,
     onSelectTile: null,
     onDeselectTiles: null,
+    isBlockingInteraction: false,
   };
 
   const initialize = async () => {
     const app = new PIXI.Application<HTMLCanvasElement>({ width: APP_WIDTH_PX, height: APP_HEIGHT_PX });
-    const gameContainer = new PIXI.Container();
-    const boardContainer = new PIXI.Container();
-    const overlayContainer = new PIXI.Container();
-    app.stage.addChild(gameContainer);
-    gameContainer.addChild(boardContainer);
-    gameContainer.addChild(overlayContainer);
-
-    // save to state
     state.app = app;
+
+    const gameContainer = new PIXI.Container();
+    app.stage.addChild(gameContainer);
     state.gameContainer = gameContainer;
+
+    const boardContainer = new PIXI.Container();
+    gameContainer.addChild(boardContainer);
     state.boardContainer = boardContainer;
+
+    const overlayContainer = new PIXI.Container();
+    gameContainer.addChild(overlayContainer);
     state.overlayContainer = overlayContainer;
 
+    const playerContainer = new PIXI.Container();
+    gameContainer.addChild(playerContainer);
+    state.playerContainer = playerContainer;
+
     return app;
+  };
+
+  const renderPlayer = async (playerState: IPlayerState) => {
+    const { app, playerContainer } = state;
+    if (!app || !playerContainer) return;
+
+    // clear player
+    playerContainer.removeChildren();
+
+    // render backdrop
+    const player = new PIXI.Graphics()
+      .beginFill('gray')
+      .drawRect(PANEL_POSITION_X, PANEL_POSITION_Y, PANEL_SIZE_X, PANEL_SIZE_Y)
+      .endFill();
+    player.alpha = 0.5;
+    playerContainer.addChild(player);
+
+    // render player
+    const { currentHealth, maxHealth, coins } = playerState;
+    const textStyle = { fontSize: 24, fill: 'white' };
+    const text = new PIXI.Text(`Player Health: ${currentHealth}/${maxHealth}\nPlayer Coins: ${coins}`, textStyle);
+    text.x = PANEL_POSITION_X + 10;
+    text.y = PANEL_POSITION_Y + 10;
+    playerContainer.addChild(text);
   };
 
   const renderBoard = async (board: TBoard) => {
@@ -52,9 +96,10 @@ const GraphicsController = (() => {
     boardContainer.removeChildren();
 
     // render backboard
-    const backboard = new PIXI.Graphics().beginFill('black').drawRect(0, 0, BOARD_SIZE, BOARD_SIZE).endFill();
-    backboard.x = BOARD_PADDING_X_PX;
-    backboard.y = BOARD_PADDING_X_PX;
+    const backboard = new PIXI.Graphics()
+      .beginFill('red')
+      .drawRect(BOARD_PADDING_PX, BOARD_PADDING_PX, BOARD_SIZE, BOARD_SIZE)
+      .endFill();
     boardContainer.addChild(backboard);
 
     // map board to state
@@ -78,15 +123,80 @@ const GraphicsController = (() => {
         if (sprite) {
           sprite.width = TILE_SIZE;
           sprite.height = TILE_SIZE;
-          sprite.x = j * TILE_SIZE + BOARD_PADDING_X_PX;
-          sprite.y = i * TILE_SIZE + BOARD_PADDING_X_PX;
+          sprite.x = j * TILE_SIZE + BOARD_PADDING_PX;
+          sprite.y = i * TILE_SIZE + BOARD_PADDING_PX;
           boardContainer.addChild(sprite);
         }
       }
     }
   };
 
+  const addTile = async ({ x, y }: { x: number; y: number }, spriteURL: string) => {
+    const { app, boardContainer } = state;
+    if (!app || !boardContainer) return;
+    const sprite = PIXI.Sprite.from(spriteURL);
+    sprite.width = TILE_SIZE;
+    sprite.height = TILE_SIZE;
+    sprite.x = x * TILE_SIZE + BOARD_PADDING_PX;
+    sprite.y = y * TILE_SIZE + BOARD_PADDING_PX;
+    boardContainer.addChild(sprite);
+    if (state.spriteBoard) state.spriteBoard[y][x] = sprite;
+  };
+
+  const moveTile = async (oldCoords, newCoords, duration = 2) => {
+    const { app, spriteBoard, boardContainer } = state;
+    if (!app || !spriteBoard || !boardContainer) return;
+
+    // get sprite
+    const sprite = spriteBoard[oldCoords.y][oldCoords.x];
+    if (!sprite) return;
+
+    // get new position
+    const newX = newCoords.x * TILE_SIZE + BOARD_PADDING_PX;
+    const newY = newCoords.y * TILE_SIZE + BOARD_PADDING_PX;
+
+    // start animation
+    let elapsed = 0;
+    state.isBlockingInteraction = true;
+    const animateTickerMethod = (delta) => {
+      elapsed += delta;
+
+      // get current position
+      const { x, y } = sprite;
+      const diffX = newX - x;
+      const diffY = newY - y;
+
+      // move across duration
+      sprite.x = x + (diffX * delta) / duration;
+      sprite.y = y + (diffY * delta) / duration;
+
+      // stop ticker
+      if (elapsed >= duration) {
+        app.ticker.remove(animateTickerMethod);
+        state.isBlockingInteraction = false;
+        sprite.x = newX;
+        sprite.y = newY;
+      }
+    };
+    app.ticker.add(animateTickerMethod);
+
+    // update spriteboard
+    spriteBoard[oldCoords.y][oldCoords.x] = undefined;
+    spriteBoard[newCoords.y][newCoords.x] = sprite;
+  };
+
+  const removeTile = ({ x, y }: { x: number; y: number }) => {
+    const { spriteBoard, boardContainer } = state;
+    if (!spriteBoard || !boardContainer) return;
+    const sprite = spriteBoard[y][x];
+    if (sprite) {
+      spriteBoard[y][x] = undefined;
+      boardContainer.removeChild(sprite);
+    }
+  };
+
   const dragStart = (e) => {
+    if (state.isBlockingInteraction) return;
     state.isDragging = true;
   };
 
@@ -106,8 +216,8 @@ const GraphicsController = (() => {
       state.overlayContainer.addChild(circle);
 
       // calculate which tile is selected
-      const boardX = Math.floor((x - BOARD_PADDING_X_PX) / TILE_SIZE);
-      const boardY = Math.floor((y - BOARD_PADDING_X_PX) / TILE_SIZE);
+      const boardX = Math.floor((x - BOARD_PADDING_PX) / TILE_SIZE);
+      const boardY = Math.floor((y - BOARD_PADDING_PX) / TILE_SIZE);
       if (boardX < 0 || boardY < 0 || boardX >= spriteBoard.length || boardY >= spriteBoard[0].length) return;
 
       // fire handler based on tile
@@ -135,7 +245,11 @@ const GraphicsController = (() => {
   return {
     initialize,
     renderBoard,
+    renderPlayer,
     initializeHandlers,
+    addTile,
+    moveTile,
+    removeTile,
 
     // assign callbacks
     onSelectTile: (callback: (tiles: { x: number; y: number }) => void) => {
@@ -148,7 +262,6 @@ const GraphicsController = (() => {
       const { spriteBoard } = state;
       if (!spriteBoard) return;
       // TODO: make more efficient?
-      console.log('RENDERING', tiles);
       spriteBoard.forEach((row) => row.forEach((sprite) => sprite && (sprite.alpha = 1)));
       tiles.forEach(({ x, y }) => {
         const sprite = spriteBoard[y][x];
