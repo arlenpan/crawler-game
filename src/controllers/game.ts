@@ -122,15 +122,18 @@ const GameController = (() => {
       }
     }
 
-    // generate new tiles
-    for (let x = 0; x < BOARD_WIDTH; x++) {
-      for (let y = 0; y < BOARD_HEIGHT; y++) {
-        if (board[y][x] === null) {
-          board[y][x] = generateRandomTile();
-          GraphicsController.addTile({ x, y }, board[y][x].spriteURL);
+    // wait for animations to play out
+    setTimeout(() => {
+      // generate new tiles
+      for (let x = 0; x < BOARD_WIDTH; x++) {
+        for (let y = 0; y < BOARD_HEIGHT; y++) {
+          if (board[y][x] === null) {
+            board[y][x] = generateRandomTile();
+            GraphicsController.addTile({ x, y }, board[y][x].spriteURL);
+          }
         }
       }
-    }
+    }, 100);
   };
 
   const updatePlayerState = (selectedTiles: { x: number; y: number }[]) => {

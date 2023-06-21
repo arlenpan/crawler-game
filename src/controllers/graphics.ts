@@ -97,7 +97,7 @@ const GraphicsController = (() => {
 
     // render backboard
     const backboard = new PIXI.Graphics()
-      .beginFill('red')
+      .beginFill('black')
       .drawRect(BOARD_PADDING_PX, BOARD_PADDING_PX, BOARD_SIZE, BOARD_SIZE)
       .endFill();
     boardContainer.addChild(backboard);
@@ -147,11 +147,9 @@ const GraphicsController = (() => {
     const { app, spriteBoard, boardContainer } = state;
     if (!app || !spriteBoard || !boardContainer) return;
 
-    // get sprite
     const sprite = spriteBoard[oldCoords.y][oldCoords.x];
     if (!sprite) return;
 
-    // get new position
     const newX = newCoords.x * TILE_SIZE + BOARD_PADDING_PX;
     const newY = newCoords.y * TILE_SIZE + BOARD_PADDING_PX;
 
@@ -176,23 +174,24 @@ const GraphicsController = (() => {
         state.isBlockingInteraction = false;
         sprite.x = newX;
         sprite.y = newY;
+
+        // update spriteboard
+        spriteBoard[oldCoords.y][oldCoords.x] = undefined;
+        spriteBoard[newCoords.y][newCoords.x] = sprite;
       }
     };
     app.ticker.add(animateTickerMethod);
-
-    // update spriteboard
-    spriteBoard[oldCoords.y][oldCoords.x] = undefined;
-    spriteBoard[newCoords.y][newCoords.x] = sprite;
   };
 
   const removeTile = ({ x, y }: { x: number; y: number }) => {
     const { spriteBoard, boardContainer } = state;
     if (!spriteBoard || !boardContainer) return;
+
     const sprite = spriteBoard[y][x];
-    if (sprite) {
-      spriteBoard[y][x] = undefined;
-      boardContainer.removeChild(sprite);
-    }
+    if (!sprite) return;
+
+    spriteBoard[y][x] = undefined;
+    boardContainer.removeChild(sprite);
   };
 
   const dragStart = (e) => {
