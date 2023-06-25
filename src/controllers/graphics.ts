@@ -1,8 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { TBoard } from 'src/consts/board';
 import {
-  APP_HEIGHT_PX,
-  APP_WIDTH_PX,
   BOARD_PADDING_PX,
   BOARD_SIZE,
   PANEL_POSITION_X,
@@ -16,9 +14,9 @@ import { COLOR_OVERLAY, TEXT_STYLE_ENEMY } from 'src/consts/style';
 import secondsToFrames from 'src/utils/secondsToFrames';
 import { IPlayerState } from './game';
 import { ILog } from './log';
+import ScreenController from './screen';
 
 interface IGraphicsState {
-  app: PIXI.Application | null;
   gameContainer: PIXI.Container | null;
   boardContainer: PIXI.Container | null;
   overlayContainer: PIXI.Container | null;
@@ -34,7 +32,6 @@ interface IGraphicsState {
 // rendering layer + input handler controller
 const GraphicsController = (() => {
   const state: IGraphicsState = {
-    app: null,
     gameContainer: null,
     boardContainer: null,
     overlayContainer: null,
@@ -48,11 +45,10 @@ const GraphicsController = (() => {
   };
 
   const initialize = async () => {
-    const app = new PIXI.Application<HTMLCanvasElement>({ width: APP_WIDTH_PX, height: APP_HEIGHT_PX });
-    state.app = app;
+    const container = ScreenController.getContainer();
 
     const gameContainer = new PIXI.Container();
-    app.stage.addChild(gameContainer);
+    container.addChild(gameContainer);
     state.gameContainer = gameContainer;
 
     const boardContainer = new PIXI.Container();
@@ -70,13 +66,11 @@ const GraphicsController = (() => {
     const logContainer = new PIXI.Container();
     gameContainer.addChild(logContainer);
     state.logContainer = logContainer;
-
-    return app;
   };
 
   const renderPlayer = async (playerState: IPlayerState) => {
-    const { app, playerContainer } = state;
-    if (!app || !playerContainer) return;
+    const { playerContainer } = state;
+    if (!playerContainer) return;
 
     // clear player
     playerContainer.removeChildren();
@@ -106,8 +100,8 @@ const GraphicsController = (() => {
   };
 
   const renderBoard = async (board: TBoard) => {
-    const { app, boardContainer } = state;
-    if (!app || !boardContainer) return;
+    const { boardContainer } = state;
+    if (!boardContainer) return;
 
     // clear board
     boardContainer.removeChildren();
@@ -143,8 +137,8 @@ const GraphicsController = (() => {
 
   const addTile = ({ x, y }: { x: number; y: number }, tile) => {
     return new Promise<void>((resolve) => {
-      const { app, boardContainer } = state;
-      if (!app || !boardContainer) return;
+      const { boardContainer } = state;
+      if (!boardContainer) return;
       const sprite = PIXI.Sprite.from(tile.spriteURL);
       sprite.width = TILE_SIZE;
       sprite.height = TILE_SIZE;
@@ -168,8 +162,9 @@ const GraphicsController = (() => {
 
   const moveTile = (oldCoords, newCoords, duration = secondsToFrames(0.1)) => {
     return new Promise<void>((resolve) => {
-      const { app, spriteBoard, boardContainer } = state;
-      if (!app || !spriteBoard || !boardContainer) return;
+      const app = ScreenController.getApp();
+      const { spriteBoard, boardContainer } = state;
+      if (!spriteBoard || !boardContainer) return;
 
       const sprite = spriteBoard[oldCoords.y][oldCoords.x];
       if (!sprite) return;
@@ -211,8 +206,9 @@ const GraphicsController = (() => {
 
   const removeTile = async ({ x, y }: { x: number; y: number }, duration = secondsToFrames(0.1)) => {
     return new Promise<void>((resolve) => {
-      const { app, spriteBoard, boardContainer } = state;
-      if (!app || !spriteBoard || !boardContainer) return;
+      const app = ScreenController.getApp();
+      const { spriteBoard, boardContainer } = state;
+      if (!spriteBoard || !boardContainer) return;
 
       const sprite = spriteBoard[y][x];
       if (!sprite) return;
@@ -325,8 +321,8 @@ const GraphicsController = (() => {
   };
 
   const renderLog = async (logs: ILog[]) => {
-    const { app, logContainer } = state;
-    if (!app || !logContainer) return;
+    const { logContainer } = state;
+    if (!logContainer) return;
 
     // clear log
     logContainer.removeChildren();

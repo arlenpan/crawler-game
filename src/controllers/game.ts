@@ -35,7 +35,7 @@ const GameController = (() => {
   };
 
   const initialize = async () => {
-    const app = await GraphicsController.initialize();
+    await GraphicsController.initialize();
     const board = generateBoard();
     state.board = board;
     GraphicsController.renderPlayer(state.player);
@@ -45,7 +45,6 @@ const GameController = (() => {
     GraphicsController.initializeHandlers();
     LogController.initialize();
     GraphicsController.renderLog(LogController.getLogs());
-    return app;
   };
 
   // validate logic whether user is allowed to select next tile
