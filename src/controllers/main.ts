@@ -7,6 +7,10 @@ const MainController = (() => {
     GameController.initialize();
   };
 
+  const handleGameEnd = () => {
+    ScreenController.setCurrentScreen('gameOver');
+  };
+
   return {
     initialize: async () => {
       ScreenController.onGameStart(handleGameStart);

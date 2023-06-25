@@ -5,6 +5,7 @@ import GraphicsController from './graphics';
 import { TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SWORD } from 'src/consts/tiles';
 import { IEnemyTile, TYPE_ENEMY } from 'src/consts/enemies';
 import LogController from './log';
+import ScreenController from './screen';
 
 interface IGameState {
   board: TBoard | null;
@@ -44,7 +45,7 @@ const GameController = (() => {
     GraphicsController.onDeselectTiles(handleDeselectTiles);
     GraphicsController.initializeHandlers();
     LogController.initialize();
-    GraphicsController.renderLog(LogController.getLogs());
+    GraphicsController.renderLog(LogController.get());
   };
 
   // validate logic whether user is allowed to select next tile
@@ -159,8 +160,8 @@ const GameController = (() => {
 
     state.player.turn += 1;
 
-    LogController.addLog(logMessage);
-    GraphicsController.renderLog(LogController.getLogs());
+    LogController.add(logMessage);
+    GraphicsController.renderLog(LogController.get());
     GraphicsController.renderPlayer(state.player);
   };
 
@@ -180,18 +181,35 @@ const GameController = (() => {
       state.player.currentHealth -= diff;
     }
 
-    LogController.addLog(`${damage} damage from enemies`, 'danger');
-    GraphicsController.renderLog(LogController.getLogs());
+    LogController.add(`${damage} damage from enemies`, 'danger');
+    GraphicsController.renderLog(LogController.get());
     GraphicsController.renderPlayer(state.player);
 
     // check if player is dead
     if (state.player.currentHealth <= 0) {
-      LogController.addLog('u ded', 'danger');
-      GraphicsController.renderLog(LogController.getLogs());
-      GraphicsController.renderPlayer(state.player);
-      GraphicsController.disableHandlers();
+      handleGameOver();
       return;
     }
+  };
+
+  const handleGameOver = async () => {
+    GraphicsController.disableHandlers();
+    ScreenController.setCurrentScreen('gameOver', {
+      stats: { coins: state.player.coins, turns: state.player.turn },
+    });
+    resetGame();
+  };
+
+  const resetGame = async () => {
+    state.board = generateBoard();
+    state.player = {
+      currentHealth: 50,
+      maxHealth: 50,
+      armor: 0,
+      coins: 0,
+      turn: 0,
+    };
+    LogController.reset();
   };
 
   const updateBoard = async (selectedTiles: { x: number; y: number }[]) => {

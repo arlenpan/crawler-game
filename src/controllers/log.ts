@@ -18,13 +18,14 @@ const LogController = (() => {
     initialize: () => {
       state.logs.push({ message: 'Welcome to the game!' });
     },
-    getLogs: () => state.logs,
-    addLog: (message: string, style?: TStyle) => {
+    get: () => state.logs,
+    add: (message: string, style?: TStyle) => {
       state.logs.push({ message, style });
     },
-    popLog: () => {
+    pop: () => {
       state.logs.pop();
     },
+    reset: () => (state.logs = []),
   };
 })();
 
