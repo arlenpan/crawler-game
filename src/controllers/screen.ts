@@ -1,6 +1,5 @@
-import { Button } from '@pixi/ui';
 import * as PIXI from 'pixi.js';
-import { APP_HEIGHT_PX, APP_WIDTH_PX, BOARD_MAX_WIDTH, GAME_HEIGHT_TO_WIDTH_RATIO } from 'src/consts/config';
+import { APP_HEIGHT_PX, APP_WIDTH_PX } from 'src/consts/config';
 import { GAME_OVER, GAME_TITLE } from 'src/consts/strings';
 import { renderButton } from 'src/helpers/graphicsUtils';
 
@@ -29,7 +28,7 @@ const ScreenController = (() => {
     const app = new PIXI.Application<HTMLCanvasElement>({ width: APP_WIDTH_PX, height: APP_HEIGHT_PX });
     state.app = app;
 
-    const background = new PIXI.Graphics().beginFill('red').drawRect(0, 0, app.view.width, app.view.height);
+    const background = new PIXI.Graphics().beginFill('gray').drawRect(0, 0, app.view.width, app.view.height);
     app.stage.addChild(background);
 
     const screenContainer = new PIXI.Container();

@@ -12,6 +12,11 @@ body,
   background: black;
 }
 
+#pixi-root {
+  max-height: 100%;
+  aspect-ratio: auto 600 / 1000;
+}
+
 /* FLEX */
 .d-flex {
   display: flex;

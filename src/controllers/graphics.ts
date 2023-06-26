@@ -1,13 +1,14 @@
 import * as PIXI from 'pixi.js';
 import { TBoard } from 'src/consts/board';
 import {
-  BOARD_PADDING_PX,
+  BOARD_POSITION_X,
+  BOARD_POSITION_Y,
   BOARD_SIZE,
   PANEL_POSITION_X,
   PANEL_POSITION_Y,
   PANEL_SIZE_X,
   PANEL_SIZE_Y,
-  TILE_SIZE,
+  TILE_SIZE
 } from 'src/consts/config';
 import { TYPE_ENEMY } from 'src/consts/enemies';
 import { COLOR_OVERLAY, TEXT_STYLE_ENEMY } from 'src/consts/style';
@@ -110,7 +111,7 @@ const GraphicsController = (() => {
     // render backboard
     const backboard = new PIXI.Graphics()
       .beginFill('black')
-      .drawRect(BOARD_PADDING_PX, BOARD_PADDING_PX, BOARD_SIZE, BOARD_SIZE)
+      .drawRect(BOARD_POSITION_X, BOARD_POSITION_Y, BOARD_SIZE, BOARD_SIZE)
       .endFill();
     boardContainer.addChild(backboard);
 
@@ -143,8 +144,8 @@ const GraphicsController = (() => {
       const sprite = PIXI.Sprite.from(tile.spriteURL);
       sprite.width = TILE_SIZE;
       sprite.height = TILE_SIZE;
-      sprite.x = x * TILE_SIZE + BOARD_PADDING_PX;
-      sprite.y = y * TILE_SIZE + BOARD_PADDING_PX;
+      sprite.x = x * TILE_SIZE + BOARD_POSITION_X;
+      sprite.y = y * TILE_SIZE + BOARD_POSITION_Y;
       boardContainer.addChild(sprite);
 
       // if tile is enemy, let's draw on some text
@@ -170,8 +171,8 @@ const GraphicsController = (() => {
       const sprite = spriteBoard[oldCoords.y][oldCoords.x];
       if (!sprite) return;
 
-      const newX = newCoords.x * TILE_SIZE + BOARD_PADDING_PX;
-      const newY = newCoords.y * TILE_SIZE + BOARD_PADDING_PX;
+      const newX = newCoords.x * TILE_SIZE + BOARD_POSITION_X;
+      const newY = newCoords.y * TILE_SIZE + BOARD_POSITION_Y;
 
       // start animation
       let elapsed = 0;
@@ -242,8 +243,8 @@ const GraphicsController = (() => {
       const { x, y } = e.global;
       const { spriteBoard } = state;
       if (!spriteBoard) return;
-      const relativeX = x - BOARD_PADDING_PX;
-      const relativeY = y - BOARD_PADDING_PX;
+      const relativeX = x - BOARD_POSITION_X;
+      const relativeY = y - BOARD_POSITION_Y;
 
       // calculate which tile is selected
       const boardX = Math.floor(relativeX / TILE_SIZE);
@@ -298,15 +299,15 @@ const GraphicsController = (() => {
 
       // draw dot on selected tile
       const circle = new PIXI.Graphics().beginFill(COLOR_OVERLAY).drawCircle(0, 0, 5).endFill();
-      circle.x = x * TILE_SIZE + BOARD_PADDING_PX + TILE_SIZE / 2;
-      circle.y = y * TILE_SIZE + BOARD_PADDING_PX + TILE_SIZE / 2;
+      circle.x = x * TILE_SIZE + BOARD_POSITION_X + TILE_SIZE / 2;
+      circle.y = y * TILE_SIZE + BOARD_POSITION_Y + TILE_SIZE / 2;
       state.overlayContainer?.addChild(circle);
 
       // draw line to previous tile if it exists
       if (i > 0) {
         const previousTile = tiles[i - 1];
-        const prevX = previousTile.x * TILE_SIZE + BOARD_PADDING_PX + TILE_SIZE / 2;
-        const prevY = previousTile.y * TILE_SIZE + BOARD_PADDING_PX + TILE_SIZE / 2;
+        const prevX = previousTile.x * TILE_SIZE + BOARD_POSITION_X + TILE_SIZE / 2;
+        const prevY = previousTile.y * TILE_SIZE + BOARD_POSITION_Y + TILE_SIZE / 2;
         const line = new PIXI.Graphics().lineStyle(3, COLOR_OVERLAY).moveTo(prevX, prevY).lineTo(circle.x, circle.y);
         state.overlayContainer?.addChild(line);
       }
