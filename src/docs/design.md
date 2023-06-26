@@ -20,6 +20,16 @@ Phases:
 * opportunity to upgrade player?
 * back to step 1
 
+### Gameplay loop
+
+1. Player plays turn
+2. Resolve turn effects
+3. Every (10?) turns, player gets to choose a path (2-3 options)
+- Go to storekeeper (spend coins, weaker item)
+- Search for treasure (roll for random item)
+- Rest (heal)
+- Tempt fate (change odds)
+
 ### Game design:
 
 First player choice (class):
@@ -33,10 +43,10 @@ Second player choice (upgrades):
 - card choices for upgrades?
 - bind player stat upgrades to different cards?
 
-Game play features:
 Different avenues of specialization/upgrades
 - (spells) - usable abilities with mana costs and CDR
 - (runes) - drawable patterns that create effects
+- (equipment) - passive effects that make you stronger
 - (fate) - changing what is generated
 
 Enemies:

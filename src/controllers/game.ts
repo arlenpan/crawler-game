@@ -112,6 +112,7 @@ const GameController = (() => {
     const { selectedTiles } = state;
     const tiles = selectedTiles.map((tile) => state.board?.[tile.y][tile.x]);
     if (tiles.length > 2 && !tiles.every((t) => t.type === TYPE_ENEMY)) processSelectedTiles(selectedTiles);
+
     state.selectedTiles = [];
     GraphicsController.updateSelectedTiles([]);
   };

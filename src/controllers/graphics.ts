@@ -8,10 +8,10 @@ import {
   PANEL_POSITION_Y,
   PANEL_SIZE_X,
   PANEL_SIZE_Y,
-  TILE_SIZE
+  TILE_SIZE,
 } from 'src/consts/config';
 import { TYPE_ENEMY } from 'src/consts/enemies';
-import { COLOR_OVERLAY, TEXT_STYLE_ENEMY } from 'src/consts/style';
+import { COLOR_APP_BG, COLOR_OVERLAY, HEALTH_BAR_HEIGHT, HEALTH_BAR_WIDTH, TEXT_STYLE_ENEMY } from 'src/consts/style';
 import secondsToFrames from 'src/utils/secondsToFrames';
 import { IPlayerState } from './game';
 import { ILog } from './log';
@@ -55,18 +55,22 @@ const GraphicsController = (() => {
 
     const boardContainer = new PIXI.Container();
     gameContainer.addChild(boardContainer);
+    boardContainer.position.set(BOARD_POSITION_X, BOARD_POSITION_Y);
     state.boardContainer = boardContainer;
 
     const overlayContainer = new PIXI.Container();
     gameContainer.addChild(overlayContainer);
+    overlayContainer.position.set(BOARD_POSITION_X, BOARD_POSITION_Y);
     state.overlayContainer = overlayContainer;
 
     const playerContainer = new PIXI.Container();
     gameContainer.addChild(playerContainer);
+    playerContainer.position.set(PANEL_POSITION_X, PANEL_POSITION_Y);
     state.playerContainer = playerContainer;
 
     const logContainer = new PIXI.Container();
     gameContainer.addChild(logContainer);
+    logContainer.position.set(PANEL_POSITION_X + BOARD_SIZE / 2, PANEL_POSITION_Y);
     state.logContainer = logContainer;
   };
 
@@ -78,27 +82,59 @@ const GraphicsController = (() => {
     playerContainer.removeChildren();
 
     // render backdrop
-    const player = new PIXI.Graphics()
-      .beginFill('gray')
-      .drawRect(PANEL_POSITION_X, PANEL_POSITION_Y, PANEL_SIZE_X, PANEL_SIZE_Y)
-      .endFill();
+    const player = new PIXI.Graphics().beginFill('gray').drawRect(0, 0, PANEL_SIZE_X, PANEL_SIZE_Y).endFill();
     player.alpha = 0.5;
     playerContainer.addChild(player);
 
     // render player
     const { currentHealth, maxHealth, armor, coins, turn } = playerState;
-    const textStyle = { fontSize: 24, fill: 'white' };
-    const text = new PIXI.Text(
-      `Player
-      Health: ${currentHealth}/${maxHealth}
-      Armor: ${armor}
-      Coins: ${coins}
-      Turn: ${turn}`,
-      textStyle
-    );
-    text.x = PANEL_POSITION_X + 10;
-    text.y = PANEL_POSITION_Y + 10;
-    playerContainer.addChild(text);
+    ``;
+    // render health bar
+    const healthBarContainer = new PIXI.Container();
+    const healthBarWrapper = new PIXI.Graphics()
+      .beginFill('black')
+      .drawRect(0, 0, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)
+      .endFill();
+    const healthBar = new PIXI.Graphics()
+      .beginFill('red')
+      .drawRect(0, 0, (currentHealth / maxHealth) * HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)
+      .endFill();
+    const healthBarText = new PIXI.Text(`HEALTH: ${currentHealth}/${maxHealth}`, { fontSize: 18, fill: 'white' });
+    healthBarContainer.addChild(healthBarWrapper);
+    healthBarContainer.addChild(healthBar);
+    healthBarContainer.addChild(healthBarText);
+    healthBarContainer.x = 10;
+    healthBarContainer.y = 10;
+    playerContainer.addChild(healthBarContainer);
+
+    // render armor
+    const armorBarContainer = new PIXI.Container();
+    const armorBarWrapper = new PIXI.Graphics()
+      .beginFill('black')
+      .drawRect(0, 0, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT)
+      .endFill();
+    const armorBar = new PIXI.Graphics()
+      .beginFill('lightblue')
+      .drawRect(0, 0, (armor / maxHealth) * HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
+    const armorBarText = new PIXI.Text(`ARMOR: ${armor}/${maxHealth}`, { fontSize: 18, fill: 'white' });
+    armorBarContainer.addChild(armorBarWrapper);
+    armorBarContainer.addChild(armorBar);
+    armorBarContainer.addChild(armorBarText);
+    armorBarContainer.x = 10;
+    armorBarContainer.y = 10 + HEALTH_BAR_HEIGHT + 10;
+    playerContainer.addChild(armorBarContainer);
+
+    // render coins
+    const coinsText = new PIXI.Text(`Coins: ${coins}`, { fontSize: 18, fill: 'gold' });
+    coinsText.x = 10;
+    coinsText.y = 10 + HEALTH_BAR_HEIGHT * 2 + 10 + 10;
+    playerContainer.addChild(coinsText);
+
+    // render turn
+    const turnText = new PIXI.Text(`Turn: ${turn}`, { fontSize: 18, fill: 'white' });
+    turnText.x = 10;
+    turnText.y = 10 + HEALTH_BAR_HEIGHT * 2 + 10 + 10 + 20;
+    playerContainer.addChild(turnText);
   };
 
   const renderBoard = async (board: TBoard) => {
@@ -109,10 +145,7 @@ const GraphicsController = (() => {
     boardContainer.removeChildren();
 
     // render backboard
-    const backboard = new PIXI.Graphics()
-      .beginFill('black')
-      .drawRect(BOARD_POSITION_X, BOARD_POSITION_Y, BOARD_SIZE, BOARD_SIZE)
-      .endFill();
+    const backboard = new PIXI.Graphics().beginFill(COLOR_APP_BG).drawRect(0, 0, BOARD_SIZE, BOARD_SIZE).endFill();
     boardContainer.addChild(backboard);
 
     // map board to state
@@ -137,6 +170,22 @@ const GraphicsController = (() => {
     }
   };
 
+  const renderLog = async (logs: ILog[]) => {
+    const { logContainer } = state;
+    if (!logContainer) return;
+
+    // clear log
+    logContainer.removeChildren();
+
+    // render log
+    for (let i = logs.length - 1; i >= 0 && i > logs.length - 15; i--) {
+      const fill = logs[i].style === 'danger' ? 'red' : 'white';
+      const text = new PIXI.Text(logs[i].message, { fontSize: 18, fill });
+      text.y = 10 + (logs.length - 1 - i) * 20;
+      logContainer.addChild(text);
+    }
+  };
+
   const addTile = ({ x, y }: { x: number; y: number }, tile) => {
     return new Promise<void>((resolve) => {
       const { boardContainer } = state;
@@ -144,8 +193,8 @@ const GraphicsController = (() => {
       const sprite = PIXI.Sprite.from(tile.spriteURL);
       sprite.width = TILE_SIZE;
       sprite.height = TILE_SIZE;
-      sprite.x = x * TILE_SIZE + BOARD_POSITION_X;
-      sprite.y = y * TILE_SIZE + BOARD_POSITION_Y;
+      sprite.x = x * TILE_SIZE;
+      sprite.y = y * TILE_SIZE;
       boardContainer.addChild(sprite);
 
       // if tile is enemy, let's draw on some text
@@ -171,8 +220,8 @@ const GraphicsController = (() => {
       const sprite = spriteBoard[oldCoords.y][oldCoords.x];
       if (!sprite) return;
 
-      const newX = newCoords.x * TILE_SIZE + BOARD_POSITION_X;
-      const newY = newCoords.y * TILE_SIZE + BOARD_POSITION_Y;
+      const newX = newCoords.x * TILE_SIZE;
+      const newY = newCoords.y * TILE_SIZE;
 
       // start animation
       let elapsed = 0;
@@ -289,25 +338,31 @@ const GraphicsController = (() => {
     const { spriteBoard } = state;
     if (!spriteBoard) return;
 
+    // reset board
+    if (tiles.length === 0) {
+      spriteBoard.forEach((row) => row.forEach((sprite) => sprite && (sprite.alpha = 1)));
+      return;
+    }
+
     // update board style
-    spriteBoard.forEach((row) => row.forEach((sprite) => sprite && (sprite.alpha = 1)));
+    spriteBoard.forEach((row) => row.forEach((sprite) => sprite && (sprite.alpha = 0.5)));
     state.overlayContainer?.removeChildren();
     for (let i = 0; i < tiles.length; i++) {
       const { x, y } = tiles[i];
       const sprite = spriteBoard[y][x];
-      if (sprite) sprite.alpha = 0.5;
+      if (sprite) sprite.alpha = 1;
 
       // draw dot on selected tile
       const circle = new PIXI.Graphics().beginFill(COLOR_OVERLAY).drawCircle(0, 0, 5).endFill();
-      circle.x = x * TILE_SIZE + BOARD_POSITION_X + TILE_SIZE / 2;
-      circle.y = y * TILE_SIZE + BOARD_POSITION_Y + TILE_SIZE / 2;
+      circle.x = x * TILE_SIZE + TILE_SIZE / 2;
+      circle.y = y * TILE_SIZE + TILE_SIZE / 2;
       state.overlayContainer?.addChild(circle);
 
       // draw line to previous tile if it exists
       if (i > 0) {
         const previousTile = tiles[i - 1];
-        const prevX = previousTile.x * TILE_SIZE + BOARD_POSITION_X + TILE_SIZE / 2;
-        const prevY = previousTile.y * TILE_SIZE + BOARD_POSITION_Y + TILE_SIZE / 2;
+        const prevX = previousTile.x * TILE_SIZE + TILE_SIZE / 2;
+        const prevY = previousTile.y * TILE_SIZE + TILE_SIZE / 2;
         const line = new PIXI.Graphics().lineStyle(3, COLOR_OVERLAY).moveTo(prevX, prevY).lineTo(circle.x, circle.y);
         state.overlayContainer?.addChild(line);
       }
@@ -322,23 +377,6 @@ const GraphicsController = (() => {
     }
   };
 
-  const renderLog = async (logs: ILog[]) => {
-    const { logContainer } = state;
-    if (!logContainer) return;
-
-    // clear log
-    logContainer.removeChildren();
-
-    // render log
-    for (let i = logs.length - 1; i >= 0; i--) {
-      const fill = logs[i].style === 'danger' ? 'red' : 'white';
-      const text = new PIXI.Text(logs[i].message, { fontSize: 18, fill });
-      text.x = PANEL_POSITION_X + 250;
-      text.y = PANEL_POSITION_Y + 10 + (logs.length - 1 - i) * 20;
-      logContainer.addChild(text);
-    }
-  };
-
   return {
     initialize,
     renderBoard,
@@ -349,6 +387,7 @@ const GraphicsController = (() => {
     addTile,
     moveTile,
     removeTile,
+
     // this fires when tiles are selected
     updateSelectedTiles: (tiles: { x: number; y: number }[], text?: string) => {
       drawOverlay(tiles, text);

@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { APP_HEIGHT_PX, APP_WIDTH_PX } from 'src/consts/config';
 import { GAME_OVER, GAME_TITLE } from 'src/consts/strings';
+import { COLOR_APP_BG } from 'src/consts/style';
 import { renderButton } from 'src/helpers/graphicsUtils';
 
 type TScreenType = 'home' | 'game' | 'gameOver';
@@ -28,7 +29,7 @@ const ScreenController = (() => {
     const app = new PIXI.Application<HTMLCanvasElement>({ width: APP_WIDTH_PX, height: APP_HEIGHT_PX });
     state.app = app;
 
-    const background = new PIXI.Graphics().beginFill('gray').drawRect(0, 0, app.view.width, app.view.height);
+    const background = new PIXI.Graphics().beginFill(COLOR_APP_BG).drawRect(0, 0, app.view.width, app.view.height);
     app.stage.addChild(background);
 
     const screenContainer = new PIXI.Container();
