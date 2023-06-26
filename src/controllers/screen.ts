@@ -1,7 +1,8 @@
 import { Button } from '@pixi/ui';
 import * as PIXI from 'pixi.js';
-import { APP_HEIGHT_PX, APP_WIDTH_PX } from 'src/consts/config';
+import { APP_HEIGHT_PX, APP_WIDTH_PX, BOARD_MAX_WIDTH, GAME_HEIGHT_TO_WIDTH_RATIO } from 'src/consts/config';
 import { GAME_OVER, GAME_TITLE } from 'src/consts/strings';
+import { renderButton } from 'src/helpers/graphicsUtils';
 
 type TScreenType = 'home' | 'game' | 'gameOver';
 
@@ -9,7 +10,6 @@ interface IScreenState {
   app: PIXI.Application | null;
   screenContainer: PIXI.Container | null;
   currentScreenType: TScreenType;
-  onGameStart: (() => void) | null;
 }
 
 // Controller for UI elements in menus and main screen
@@ -18,6 +18,9 @@ const ScreenController = (() => {
     app: null,
     screenContainer: null,
     currentScreenType: 'home',
+  };
+
+  const handlers = {
     onGameStart: null,
   };
 
@@ -25,6 +28,9 @@ const ScreenController = (() => {
   const initialize = async () => {
     const app = new PIXI.Application<HTMLCanvasElement>({ width: APP_WIDTH_PX, height: APP_HEIGHT_PX });
     state.app = app;
+
+    const background = new PIXI.Graphics().beginFill('red').drawRect(0, 0, app.view.width, app.view.height);
+    app.stage.addChild(background);
 
     const screenContainer = new PIXI.Container();
     app.stage.addChild(screenContainer);
@@ -63,19 +69,9 @@ const ScreenController = (() => {
     title.position.set(APP_WIDTH_PX / 2, APP_HEIGHT_PX / 2);
     screenContainer.addChild(title);
 
-    const buttonContainer = new PIXI.Container();
-    const buttonGraphic = new PIXI.Graphics().beginFill('white').drawRoundedRect(0, 0, 150, 50, 50).endFill();
-    const startButton = new Button(buttonGraphic);
-    startButton.onPress.connect(() => {
-      setCurrentScreen('game');
-    });
-    buttonContainer.addChild(startButton.view);
-    const buttonText = new PIXI.Text('START', { fill: 'black' });
-    buttonText.anchor.set(0.5);
-    buttonText.position.set(75, 25);
-    buttonContainer.addChild(buttonText);
-    buttonContainer.position.set(APP_WIDTH_PX / 2 - 75, APP_HEIGHT_PX / 2 + 100);
-    screenContainer.addChild(buttonContainer);
+    const button = renderButton({ text: 'START', onClick: () => setCurrentScreen('game') });
+    button.position.set(APP_WIDTH_PX / 2 - 75, APP_HEIGHT_PX / 2 + 50);
+    screenContainer.addChild(button);
   };
 
   const renderGameScreen = async () => {
@@ -83,7 +79,7 @@ const ScreenController = (() => {
     if (!screenContainer) return;
     screenContainer.removeChildren();
 
-    if (state.onGameStart) state.onGameStart();
+    if (handlers.onGameStart) handlers.onGameStart();
   };
 
   const renderGameOverScreen = (context) => {
@@ -104,28 +100,19 @@ const ScreenController = (() => {
       screenContainer.addChild(statsText);
     }
 
-    const buttonContainer = new PIXI.Container();
-    const buttonGraphic = new PIXI.Graphics().beginFill('white').drawRoundedRect(0, 0, 150, 50, 50).endFill();
-    const startButton = new Button(buttonGraphic);
-    startButton.onPress.connect(() => {
-      setCurrentScreen('game');
-    });
-    buttonContainer.addChild(startButton.view);
-    const buttonText = new PIXI.Text('RESTART', { fill: 'black' });
-    buttonText.anchor.set(0.5);
-    buttonText.position.set(75, 25);
-    buttonContainer.addChild(buttonText);
-    buttonContainer.position.set(APP_WIDTH_PX / 2 - 75, APP_HEIGHT_PX / 2 + 125);
-    screenContainer.addChild(buttonContainer);
+    const button = renderButton({ text: 'RESTART', onClick: () => setCurrentScreen('game') });
+    button.position.set(APP_WIDTH_PX / 2 - 75, APP_HEIGHT_PX / 2 + 125);
+    screenContainer.addChild(button);
   };
 
   return {
     initialize,
     setCurrentScreen,
 
-    onGameStart: (callback) => (state.onGameStart = callback),
     getApp: () => state.app,
     getContainer: () => state.screenContainer,
+
+    onGameStart: (callback) => (handlers.onGameStart = callback),
   };
 })();
 

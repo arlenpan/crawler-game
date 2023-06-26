@@ -1,11 +1,10 @@
 import { TBoard } from 'src/consts/board';
 import { BOARD_HEIGHT, BOARD_WIDTH } from 'src/consts/config';
+import { IEnemyTile, TYPE_ENEMY } from 'src/consts/enemies';
+import { TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SWORD } from 'src/consts/tiles';
 import { canDragToNextTile, canStartDragOnTile, generateBoard, generateRandomTile } from 'src/helpers/gameLogic';
 import GraphicsController from './graphics';
-import { TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SWORD } from 'src/consts/tiles';
-import { IEnemyTile, TYPE_ENEMY } from 'src/consts/enemies';
 import LogController from './log';
-import ScreenController from './screen';
 
 interface IGameState {
   board: TBoard | null;
@@ -33,6 +32,10 @@ const GameController = (() => {
       coins: 0,
       turn: 0,
     },
+  };
+
+  const handlers = {
+    onGameOver: null,
   };
 
   const initialize = async () => {
@@ -194,9 +197,11 @@ const GameController = (() => {
 
   const handleGameOver = async () => {
     GraphicsController.disableHandlers();
-    ScreenController.setCurrentScreen('gameOver', {
-      stats: { coins: state.player.coins, turns: state.player.turn },
-    });
+    if (handlers.onGameOver) {
+      handlers.onGameOver({
+        stats: { coins: state.player.coins, turns: state.player.turn },
+      });
+    }
     resetGame();
   };
 
@@ -265,7 +270,13 @@ const GameController = (() => {
     GraphicsController.renderBoard(board);
   };
 
-  return { initialize, canStartDragOnTile, canDragToNextTile };
+  return {
+    initialize,
+    canStartDragOnTile,
+    canDragToNextTile,
+
+    onGameOver: (callback) => (handlers.onGameOver = callback),
+  };
 })();
 
 export default GameController;

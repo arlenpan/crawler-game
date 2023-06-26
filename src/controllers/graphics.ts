@@ -24,8 +24,6 @@ interface IGraphicsState {
   playerContainer: PIXI.Container | null;
   spriteBoard: (PIXI.Sprite | undefined)[][] | null;
   isDragging: boolean;
-  onSelectTile: ((tiles: { x: number; y: number }) => void) | null;
-  onDeselectTiles: (() => void) | null;
   isBlockingInteraction: boolean;
 }
 
@@ -39,9 +37,12 @@ const GraphicsController = (() => {
     playerContainer: null,
     spriteBoard: null,
     isDragging: false,
+    isBlockingInteraction: false,
+  };
+
+  const handlers = {
     onSelectTile: null,
     onDeselectTiles: null,
-    isBlockingInteraction: false,
   };
 
   const initialize = async () => {
@@ -255,14 +256,14 @@ const GraphicsController = (() => {
       if (tileX < 10 || tileX > TILE_SIZE - 10 || tileY < 10 || tileY > TILE_SIZE - 10) return;
 
       // fire handler based on tile
-      if (state.onSelectTile) state.onSelectTile({ x: boardX, y: boardY });
+      if (handlers.onSelectTile) handlers.onSelectTile({ x: boardX, y: boardY });
     }
   };
 
   const dragEnd = (e) => {
     state.isDragging = false;
     if (state.overlayContainer) state.overlayContainer.removeChildren();
-    if (state.onDeselectTiles) state.onDeselectTiles();
+    if (handlers.onDeselectTiles) handlers.onDeselectTiles();
   };
 
   const initializeHandlers = async () => {
@@ -347,17 +348,17 @@ const GraphicsController = (() => {
     addTile,
     moveTile,
     removeTile,
-
-    // assign callbacks
-    onSelectTile: (callback: (tiles: { x: number; y: number }) => void) => {
-      state.onSelectTile = callback;
-    },
-    onDeselectTiles: (callback: () => void) => {
-      state.onDeselectTiles = callback;
-    },
     // this fires when tiles are selected
     updateSelectedTiles: (tiles: { x: number; y: number }[], text?: string) => {
       drawOverlay(tiles, text);
+    },
+
+    // assign callbacks
+    onSelectTile: (callback: (tiles: { x: number; y: number }) => void) => {
+      handlers.onSelectTile = callback;
+    },
+    onDeselectTiles: (callback: () => void) => {
+      handlers.onDeselectTiles = callback;
     },
   };
 })();
