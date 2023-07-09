@@ -10,6 +10,7 @@ interface IScreenState {
   app: PIXI.Application | null;
   screenContainer: PIXI.Container | null;
   currentScreenType: TScreenType;
+  modalContainer: PIXI.Container | null;
 }
 
 // Controller for UI elements in menus and main screen
@@ -18,6 +19,7 @@ const ScreenController = (() => {
     app: null,
     screenContainer: null,
     currentScreenType: 'home',
+    modalContainer: null,
   };
 
   const handlers = {
@@ -35,6 +37,10 @@ const ScreenController = (() => {
     const screenContainer = new PIXI.Container();
     app.stage.addChild(screenContainer);
     state.screenContainer = screenContainer;
+
+    const modalContainer = new PIXI.Container();
+    app.stage.addChild(modalContainer);
+    state.modalContainer = modalContainer;
 
     setCurrentScreen('home');
     return app;

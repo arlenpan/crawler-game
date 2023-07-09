@@ -1,15 +1,18 @@
+import { RATE_SHOP_SPAWN_INCREASE_PER_TURN } from 'src/consts/balance';
 import { TBoard } from 'src/consts/board';
 import { BOARD_HEIGHT, BOARD_WIDTH } from 'src/consts/config';
-import { IEnemyTile, TYPE_ENEMY } from 'src/consts/enemies';
-import { TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SWORD } from 'src/consts/tiles';
+import { TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SHOP, TILE_SWORD } from 'src/consts/tiles';
+import { IEnemyTile, TYPE_ENEMY } from 'src/consts/tiles_enemies';
 import { canDragToNextTile, canStartDragOnTile, generateBoard, generateRandomTile } from 'src/helpers/gameLogic';
 import GraphicsController from './graphics';
 import LogController from './log';
+import ScreenController from './screen';
 
 interface IGameState {
   board: TBoard | null;
   selectedTiles: { x: number; y: number }[];
   player: IPlayerState;
+  shopRate: number; // shop rate calculates how likely shop is to appear since last shop
 }
 
 export interface IPlayerState {
@@ -32,6 +35,7 @@ const GameController = (() => {
       coins: 0,
       turn: 0,
     },
+    shopRate: 0,
   };
 
   const handlers = {
@@ -44,11 +48,22 @@ const GameController = (() => {
     state.board = board;
     GraphicsController.renderPlayer(state.player);
     GraphicsController.renderBoard(board);
+    GraphicsController.onClickTile(handleClickTile);
     GraphicsController.onSelectTile(handleSelectTile);
     GraphicsController.onDeselectTiles(handleDeselectTiles);
     GraphicsController.initializeHandlers();
     LogController.initialize();
     GraphicsController.renderLog(LogController.get());
+  };
+
+  const handleClickTile = (tileCoords: { x: number; y: number }) => {
+    const { selectedTiles, board } = state;
+    const { x, y } = tileCoords;
+    const tile = board?.[y][x];
+    if (tile.type === TILE_SHOP.type) {
+      // trigger confirmation modal
+      // ScreenController.renderConfirmationModal('Are you sure you want to enter the shop?', () => {});
+    }
   };
 
   // validate logic whether user is allowed to select next tile
@@ -255,11 +270,25 @@ const GameController = (() => {
     }
     await Promise.all(movePromises);
 
+    // does board have shop? if not, increase shop rate
+    let hasShop = board.some((row) => row.some((tile) => tile?.type === TILE_SHOP.type));
+    if (!hasShop) {
+      state.shopRate += RATE_SHOP_SPAWN_INCREASE_PER_TURN;
+    }
+
     // generate new tiles
     const addPromises = [];
     for (let x = 0; x < BOARD_WIDTH; x++) {
       for (let y = 0; y < BOARD_HEIGHT; y++) {
         if (board[y][x] === null) {
+          // does shop spawn?
+          if (!hasShop && Math.random() < state.shopRate) {
+            board[y][x] = TILE_SHOP;
+            hasShop = true;
+            addPromises.push(GraphicsController.addTile({ x, y }, TILE_SHOP));
+            continue;
+          }
+
           const tile = generateRandomTile(player.turn);
           board[y][x] = tile;
           addPromises.push(GraphicsController.addTile({ x, y }, tile));

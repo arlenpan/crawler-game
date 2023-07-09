@@ -2,6 +2,7 @@ import swordURL from '../assets/sword.png';
 import potionURL from '../assets/potion.jpg';
 import coinURL from '../assets/coin.png';
 import shieldURL from '../assets/shield.png';
+import shopURL from '../assets/shop.png';
 
 // Entities for tiles
 export interface ITile {
@@ -32,4 +33,10 @@ export const TILE_SHIELD: ITile = {
   type: 'shield',
   spriteURL: shieldURL,
   rate: 1,
+};
+
+export const TILE_SHOP: ITile = {
+  type: 'shop',
+  spriteURL: shopURL,
+  rate: 0,
 };

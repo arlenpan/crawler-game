@@ -1,4 +1,4 @@
-import { IEnemyTile, TILE_ENEMY_RAT } from './enemies';
+import { IEnemyTile, TILE_ENEMY_RAT } from './tiles_enemies';
 import { ITile, TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SWORD } from './tiles';
 
 export type TBoardTile = ITile | IEnemyTile | null;

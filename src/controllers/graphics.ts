@@ -10,7 +10,7 @@ import {
   PANEL_SIZE_Y,
   TILE_SIZE,
 } from 'src/consts/config';
-import { TYPE_ENEMY } from 'src/consts/enemies';
+import { TYPE_ENEMY } from 'src/consts/tiles_enemies';
 import { COLOR_APP_BG, COLOR_OVERLAY, HEALTH_BAR_HEIGHT, HEALTH_BAR_WIDTH, TEXT_STYLE_ENEMY } from 'src/consts/style';
 import secondsToFrames from 'src/utils/secondsToFrames';
 import { IPlayerState } from './game';
@@ -42,6 +42,7 @@ const GraphicsController = (() => {
   };
 
   const handlers = {
+    onClickTile: null,
     onSelectTile: null,
     onDeselectTiles: null,
   };
@@ -282,9 +283,29 @@ const GraphicsController = (() => {
     });
   };
 
+  const findTileCoordsFromTarget = (x: number, y: number) => {
+    const { spriteBoard } = state;
+    if (!spriteBoard) return;
+    const relativeX = x - BOARD_POSITION_X;
+    const relativeY = y - BOARD_POSITION_Y;
+
+    // calculate which tile is selected
+    const boardX = Math.floor(relativeX / TILE_SIZE);
+    const boardY = Math.floor(relativeY / TILE_SIZE);
+    if (boardX < 0 || boardY < 0 || boardX >= spriteBoard.length || boardY >= spriteBoard[0].length) return;
+
+    return { x: boardX, y: boardY };
+  };
+
   const dragStart = (e) => {
     if (state.isBlockingInteraction) return;
     state.isDragging = true;
+
+    if (handlers.onClickTile) {
+      const { x, y } = e.global;
+      const coords = findTileCoordsFromTarget(x, y);
+      if (coords) handlers.onClickTile(coords);
+    }
   };
 
   const dragMove = (e) => {
@@ -394,6 +415,9 @@ const GraphicsController = (() => {
     },
 
     // assign callbacks
+    onClickTile: (callback: (tiles: { x: number; y: number }) => void) => {
+      handlers.onClickTile = callback;
+    },
     onSelectTile: (callback: (tiles: { x: number; y: number }) => void) => {
       handlers.onSelectTile = callback;
     },
