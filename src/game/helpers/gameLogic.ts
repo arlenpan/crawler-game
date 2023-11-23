@@ -1,10 +1,10 @@
 // contains checks for game logic - no state based utilities
 
-import { BASE_TILES, ENEMY_TILES, TBoard, TBoardTile } from 'src/consts/board';
-import { BOARD_HEIGHT, BOARD_WIDTH } from 'src/consts/config';
-import { IEnemyTile, TYPE_ENEMY } from 'src/consts/tiles_enemies';
-import { TILE_SWORD } from 'src/consts/tiles';
-import { getWeightedRandomIndex } from 'src/utils/getWeightedRandomIndex';
+import { BASE_TILES, ENEMY_TILES, TBoard, TBoardTile } from 'src/game/consts/board';
+import { BOARD_HEIGHT, BOARD_WIDTH } from 'src/game/consts/config';
+import { IEnemyTile, TYPE_ENEMY } from 'src/game/consts/tiles_enemies';
+import { TILE_SWORD } from 'src/game/consts/tiles';
+import { getWeightedRandomIndex } from 'src/game/utils/getWeightedRandomIndex';
 import { turnToAttackMultiplier, turnToHealthMultiplier, turnToRateMultiplier } from './gameDifficulty';
 
 export const generateBoard = (width = BOARD_WIDTH, height = BOARD_HEIGHT) => {

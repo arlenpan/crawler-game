@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { TBoard } from 'src/consts/board';
+import { TBoard } from 'src/game/consts/board';
 import {
   BOARD_POSITION_X,
   BOARD_POSITION_Y,
@@ -9,10 +9,10 @@ import {
   PANEL_SIZE_X,
   PANEL_SIZE_Y,
   TILE_SIZE,
-} from 'src/consts/config';
-import { TYPE_ENEMY } from 'src/consts/tiles_enemies';
-import { COLOR_APP_BG, COLOR_OVERLAY, HEALTH_BAR_HEIGHT, HEALTH_BAR_WIDTH, TEXT_STYLE_ENEMY } from 'src/consts/style';
-import secondsToFrames from 'src/utils/secondsToFrames';
+} from 'src/game/consts/config';
+import { TYPE_ENEMY } from 'src/game/consts/tiles_enemies';
+import { COLOR_APP_BG, COLOR_OVERLAY, HEALTH_BAR_HEIGHT, HEALTH_BAR_WIDTH, TEXT_STYLE_ENEMY } from 'src/game/consts/style';
+import secondsToFrames from 'src/game/utils/secondsToFrames';
 import { IPlayerState } from './game';
 import { ILog } from './log';
 import ScreenController from './screen';

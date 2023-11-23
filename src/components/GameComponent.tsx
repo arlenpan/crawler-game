@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import MainController from 'src/controllers/main';
+import MainController from 'src/game/controllers/main';
 
 const GameComponent = () => {
   const [isInitialized, setIsInitialized] = useState(false);

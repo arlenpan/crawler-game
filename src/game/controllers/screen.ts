@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js';
-import { APP_HEIGHT_PX, APP_WIDTH_PX } from 'src/consts/config';
-import { GAME_OVER, GAME_TITLE } from 'src/consts/strings';
-import { COLOR_APP_BG } from 'src/consts/style';
-import { renderButton } from 'src/helpers/graphicsUtils';
+import { APP_HEIGHT_PX, APP_WIDTH_PX, MODAL_HEIGHT, MODAL_WIDTH } from 'src/game/consts/config';
+import { GAME_OVER, GAME_TITLE } from 'src/game/consts/strings';
+import { COLOR_APP_BG } from 'src/game/consts/style';
+import { renderButton } from 'src/game/helpers/graphicsUtils';
 
 type TScreenType = 'home' | 'game' | 'gameOver';
 
@@ -111,9 +111,29 @@ const ScreenController = (() => {
     screenContainer.addChild(button);
   };
 
+  const renderModal = ({ width = MODAL_WIDTH, height = MODAL_HEIGHT }) => {
+    const { modalContainer } = state;
+    if (!modalContainer) return;
+    modalContainer.removeChildren();
+
+    const modal = new PIXI.Graphics().beginFill('red', 0.5).drawRect(0, 0, width, height);
+    modal.position.set(APP_WIDTH_PX / 2 - width / 2, APP_HEIGHT_PX / 2 - height / 2);
+    modalContainer.addChild(modal);
+
+    return modal;
+  };
+
+  const closeModal = () => {
+    const { modalContainer } = state;
+    if (!modalContainer) return;
+    modalContainer.removeChildren();
+  };
+
   return {
     initialize,
     setCurrentScreen,
+    renderModal,
+    closeModal,
 
     getApp: () => state.app,
     getContainer: () => state.screenContainer,

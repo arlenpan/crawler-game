@@ -15,3 +15,6 @@ export const PANEL_POSITION_X = BOARD_PADDING_PX;
 export const PANEL_POSITION_Y = BOARD_PADDING_PX;
 
 export const TILE_SIZE = BOARD_SIZE / BOARD_WIDTH;
+
+export const MODAL_WIDTH = 500;
+export const MODAL_HEIGHT = 800;

@@ -1,9 +1,9 @@
-import { RATE_SHOP_SPAWN_INCREASE_PER_TURN } from 'src/consts/balance';
-import { TBoard } from 'src/consts/board';
-import { BOARD_HEIGHT, BOARD_WIDTH } from 'src/consts/config';
-import { TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SHOP, TILE_SWORD } from 'src/consts/tiles';
-import { IEnemyTile, TYPE_ENEMY } from 'src/consts/tiles_enemies';
-import { canDragToNextTile, canStartDragOnTile, generateBoard, generateRandomTile } from 'src/helpers/gameLogic';
+import { RATE_SHOP_SPAWN_INCREASE_PER_TURN } from 'src/game/consts/balance';
+import { TBoard } from 'src/game/consts/board';
+import { BOARD_HEIGHT, BOARD_WIDTH } from 'src/game/consts/config';
+import { TILE_COIN, TILE_POTION, TILE_SHIELD, TILE_SHOP, TILE_SWORD } from 'src/game/consts/tiles';
+import { IEnemyTile, TYPE_ENEMY } from 'src/game/consts/tiles_enemies';
+import { canDragToNextTile, canStartDragOnTile, generateBoard, generateRandomTile } from 'src/game/helpers/gameLogic';
 import GraphicsController from './graphics';
 import LogController from './log';
 import ScreenController from './screen';
@@ -60,9 +60,10 @@ const GameController = (() => {
     const { selectedTiles, board } = state;
     const { x, y } = tileCoords;
     const tile = board?.[y][x];
+
     if (tile.type === TILE_SHOP.type) {
       // trigger confirmation modal
-      // ScreenController.renderConfirmationModal('Are you sure you want to enter the shop?', () => {});
+      ScreenController.renderModal({});
     }
   };
 
